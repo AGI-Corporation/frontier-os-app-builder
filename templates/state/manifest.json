@@ -1,0 +1,11 @@
+{
+  "name": "{{APP_NAME}}",
+  "packageName": "{{PACKAGE_NAME}}",
+  "description": "{{APP_DESCRIPTION}}",
+  "sdkVersion": "{{SDK_VERSION}}",
+  "devPort": {{DEV_PORT}},
+  "modules": [],
+  "permissions": [],
+  "milestone": "v1",
+  "phases": []
+}

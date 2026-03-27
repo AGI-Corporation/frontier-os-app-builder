@@ -1,0 +1,30 @@
+{
+  "name": "frontier-os-app-builder",
+  "version": "1.0.0",
+  "description": "Meta-prompting framework for building Frontier OS apps with Claude Code",
+  "author": "BerlinhouseLabs",
+  "license": "MIT",
+  "bin": {
+    "frontier-os-app-builder": "./bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "commands/",
+    "agents/",
+    "workflows/",
+    "references/",
+    "templates/",
+    "README.md"
+  ],
+  "keywords": [
+    "frontier-os",
+    "claude-code",
+    "frontier-sdk",
+    "app-builder",
+    "meta-prompting"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BerlinhouseLabs/frontier-os-app-builder.git"
+  }
+}
