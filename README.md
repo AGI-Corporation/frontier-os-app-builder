@@ -48,6 +48,16 @@ npx frontier-os-app-builder --uninstall
 /fos:ship                       → deploy to Vercel + register in app store
 ```
 
+5. Keep building — add features or start a new version:
+
+```
+/fos:add-feature "leaderboard"  → adds a new phase to the current milestone
+  /clear
+/fos:discuss N → /fos:plan N → /fos:execute N   → same loop
+
+/fos:new-milestone "v2 features" → archives v1, creates new phases for v2
+```
+
 ## Commands
 
 | Command | Purpose |
