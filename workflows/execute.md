@@ -123,11 +123,18 @@ For each plan file in `incomplete_plans`:
    ```
    Task(
      subagent_type="fos-executor",
+     isolation="worktree",
      prompt="
        <objective>
        Execute plan [plan_number] of Phase [phase_number]-[phase_name].
        Commit each task atomically. Create SUMMARY.md when done. Update STATE.md.
        </objective>
+
+       <parallel_execution>
+       You are running as a PARALLEL executor agent. Use --no-verify on all git
+       commits to avoid pre-commit hook contention with other agents. The
+       orchestrator validates hooks once after all agents complete.
+       </parallel_execution>
 
        <execution_context>
        @$HOME/.claude/frontier-os-app-builder/workflows/execute-plan.md
@@ -170,7 +177,17 @@ For each plan file in `incomplete_plans`:
    If SUMMARY.md exists and git log shows recent commits for this plan: treat as complete.
    If SUMMARY.md missing after agent returns: report as failed.
 
-4. **Report wave completion:**
+4. **Post-wave hook validation (parallel mode):**
+
+   When agents committed with `--no-verify`, run pre-commit hooks once after the wave:
+   ```bash
+   git stash --quiet 2>/dev/null || true
+   git hook run pre-commit 2>&1 || echo "Warning: Pre-commit hooks failed — review before continuing"
+   git stash pop --quiet 2>/dev/null || true
+   ```
+   If hooks fail: report the failure and ask "Fix hook issues now?" or "Continue to next wave?"
+
+5. **Report wave completion:**
 
    For each completed plan, read its SUMMARY.md and extract:
    - One-liner description
@@ -189,7 +206,7 @@ For each plan file in `incomplete_plans`:
    ---
    ```
 
-5. **Handle failures:**
+6. **Handle failures:**
 
    If a plan fails:
    - Report which plan failed and why (from agent output or error)
@@ -230,7 +247,11 @@ Task(
     </verification_commands>
 
     <output>
-    Return structured result:
+    Write VERIFICATION.md to $PHASE_DIR/{phase_num}-VERIFICATION.md using the Write tool,
+    following the output_format structure in your agent definition (frontmatter with status,
+    verified_date, checks_passed, gaps fields, then full check results by category).
+
+    Then return structured result to the orchestrator:
     - verdict: PASS or FAIL
     - criteria_results: each success criterion with pass/fail
     - gaps: list of gaps found (if any)

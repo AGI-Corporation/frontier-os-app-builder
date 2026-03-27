@@ -123,10 +123,55 @@ Use AskUserQuestion:
 **If `has_context` is false:** Continue to analyze_phase.
 </step>
 
+<step name="load_prior_decisions">
+**Load decisions from prior phases to maintain cross-phase consistency.**
+
+Read all CONTEXT.md files from prior phases to avoid re-asking decided questions and to maintain consistency across phases.
+
+**Step 1: Find prior CONTEXT.md files**
+```bash
+ls .frontier-app/phases/*/??-CONTEXT.md 2>/dev/null | sort
+```
+
+For each CONTEXT.md where the phase number is less than the current phase:
+1. Read the **Implementation Decisions** section — these are locked preferences
+2. Read the **Deferred Ideas** section — ideas punted from earlier phases
+3. Read the **Specific Ideas** section — user references and "I want it like X" moments
+4. Note any patterns (e.g., "user consistently prefers card layouts", "user chose optimistic UI")
+
+**Step 2: Build internal `prior_decisions` context**
+
+Structure the extracted information:
+```
+<prior_decisions>
+## From Prior Phases
+
+### Phase N: [Name]
+- D-XX: [Decision that may be relevant to current phase]
+- D-XX: [Preference that establishes a pattern]
+
+### Phase M: [Name]
+- D-XX: [Another relevant decision]
+
+## Deferred Ideas (from prior phases)
+- [Idea deferred from Phase N that may now be relevant]
+</prior_decisions>
+```
+
+**Usage in subsequent steps:**
+- `analyze_phase`: Skip gray areas already decided in prior phases
+- `present_areas`: Annotate options with prior decisions ("You chose X in Phase N")
+- `discuss_areas`: Pre-fill answers or flag conflicts ("This contradicts Phase N decision D-XX — same here or different?")
+
+**If no prior CONTEXT.md files exist:** Continue without — this is expected for Phase 1.
+</step>
+
 <step name="analyze_phase">
 **Identify gray areas based on phase goal + SDK modules.**
 
 Gray areas are implementation decisions the user cares about — things that could go multiple ways and would change the result.
+
+**If `prior_decisions` context exists:** Filter out gray areas already decided in prior phases. Only present areas that are genuinely new or where the prior decision needs revisiting for this phase's specific context.
 
 **For Phase 1 (Scaffold + SDK Core):**
 Minimal gray areas — scaffold is well-defined. Only ask:
@@ -201,6 +246,8 @@ Use AskUserQuestion:
 **Deep-dive each selected area.**
 
 For each selected gray area, ask ONE focused question at a time. Use AskUserQuestion with concrete options — never open-ended "what do you think?"
+
+**Prior decision awareness:** If `prior_decisions` contains a relevant decision for this area, present it as context: "In Phase [N], you decided [decision]. Apply the same approach here, or different?" Offer "Same as Phase [N]" as the first option, then the other alternatives.
 
 **Example for "Card Layout" area:**
 ```
