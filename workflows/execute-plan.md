@@ -23,7 +23,7 @@ This workflow runs inside a subagent — it does not spawn further subagents.
 4. **SdkProvider wrapping:** The entire app is wrapped in SdkProvider. SDK is initialized once via useRef, destroyed on unmount.
 5. **Error handling:** All SDK calls wrapped in try/catch. Loading states for async operations. Error states with user-friendly messages.
 6. **Permissions:** Every SDK method used must have its permission declared in manifest.json.
-7. **CORS:** vercel.json must include all 5 Frontier OS origins in CORS headers.
+7. **CORS:** vercel.json must include all 3 Frontier OS origins in CORS headers.
 8. **TypeScript strict:** All code in TypeScript strict mode. No `any` types unless explicitly justified.
 9. **Imports:** Use `@frontiertower/frontier-sdk` for SDK. Exact import paths, not barrel imports.
 10. **Testing:** Vitest for unit tests. Test files co-located or in `src/test/`.

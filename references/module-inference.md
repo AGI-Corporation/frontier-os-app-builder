@@ -29,7 +29,6 @@ Given a natural-language business description of an app:
 - `getAddress()` -- get user's wallet address
 - `transferFrontierDollar(to, amount)` -- send FND to another address
 - `transferInternalFrontierDollar(to, amount)` -- send iFND
-- `transferOverallFrontierDollar(to, amount)` -- send FND, preferring iFND first
 - `transferOverallFrontierDollar(to, amount)` -- send FND, preferring iFND first, falling back to FND
 - `swap(params)` / `quoteSwap(params)` -- token swap operations
 - `getUsdDepositInstructions()` / `getEurDepositInstructions()` -- fiat on-ramp

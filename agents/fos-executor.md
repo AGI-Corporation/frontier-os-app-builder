@@ -120,7 +120,7 @@ node $HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs scaffold <template>
 - `src/views/Layout.tsx` — Must include `isInFrontierApp()` detection, `createStandaloneHTML()` fallback, `SdkProvider` wrapping children
 - `src/styles/index.css` — Must include `@import "tailwindcss"`, complete `@theme` block with ALL CSS variables, `@layer base` with body styles
 - `index.html` — Must have `<body class="dark">`, Plus Jakarta Sans font links
-- `vercel.json` — Must have all 5 CORS origin blocks + SPA rewrite
+- `vercel.json` — Must have all 3 CORS origin blocks + SPA rewrite
 - `package.json` — Must have correct scripts (dev, build, preview, lint, test) and all required dependencies
 
 </scaffold_execution>

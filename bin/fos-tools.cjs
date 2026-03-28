@@ -434,7 +434,7 @@ function cmdValidateStructure(cwd, flags) {
     if (!exists) issues.push(`Missing required file: ${file}`);
   }
 
-  // Check vercel.json has all 5 CORS origins
+  // Check vercel.json has all 3 CORS origins
   const vercelPath = path.join(cwd, 'vercel.json');
   if (fs.existsSync(vercelPath)) {
     const vercel = readFile(vercelPath);
@@ -505,7 +505,7 @@ function cmdValidatePermissions(cwd, flags) {
       } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
         const content = readFile(path.join(dir, entry.name));
         // Match sdk.getX().methodName() or getX().methodName() patterns
-        const calls = content.match(/\.(getWallet|getUser|getStorage|getChain|getEvents|getCommunities|getPartnerships|getOffices|getThirdParty)\(\)\.\w+/g);
+        const calls = content.match(/\.(getWallet|getUser|getStorage|getChain|getEvents|getCommunities|getPartnerships|getOffices|getThirdParty|getNavigation)\(\)\.\w+/g);
         if (calls) calls.forEach(c => usedMethods.add(c.slice(1)));
       }
     }

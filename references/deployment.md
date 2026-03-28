@@ -92,7 +92,7 @@ All Frontier OS apps deploy to Vercel. The `vercel.json` file is identical acros
 }
 ```
 
-### Why 5 Separate Blocks
+### Why 3 Separate Blocks
 
 Vercel does not support multiple values in a single `Access-Control-Allow-Origin` header. Each allowed origin requires its own conditional header block using the `has` matcher. The `has` condition checks the incoming `Origin` request header and only attaches the CORS response headers when the origin matches.
 
@@ -122,7 +122,7 @@ In addition to CORS, all deployment targets should include:
 
 | Header                       | Recommended Value                                  | Purpose                                     |
 | ---------------------------- | -------------------------------------------------- | ------------------------------------------- |
-| `Content-Security-Policy`    | Include `frame-ancestors` for all 5 Frontier origins | Prevents embedding by unauthorized sites   |
+| `Content-Security-Policy`    | Include `frame-ancestors` for all 3 Frontier origins | Prevents embedding by unauthorized sites   |
 | `X-Content-Type-Options`     | `nosniff`                                          | Prevents MIME-type sniffing                 |
 | `Referrer-Policy`            | `strict-origin-when-cross-origin`                  | Controls referrer information leakage       |
 | `Permissions-Policy`         | Disable unnecessary browser APIs                   | Reduces attack surface                      |

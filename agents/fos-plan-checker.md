@@ -176,7 +176,7 @@ issue:
    - `package.json` (correct scripts, dependencies)
    - `postcss.config.js` (imports @tailwindcss/postcss)
    - `tsconfig.json` (strict mode, correct types)
-   - `vercel.json` (all 5 CORS origins)
+   - `vercel.json` (all 3 CORS origins)
    - `vite.config.ts`
    - `src/main.tsx`
    - `src/lib/sdk-context.tsx`
@@ -189,7 +189,7 @@ issue:
    - SdkProvider wrapping children
    - Dark theme CSS variables (all variables from T-01)
    - Plus Jakarta Sans font loading (T-03)
-   - 5 CORS origins in vercel.json (C-01)
+   - 3 CORS origins in vercel.json (C-01)
    - Correct package.json scripts: dev, build, preview, lint, test (C-04)
 
 **Example issue:**
@@ -199,7 +199,7 @@ issue:
   severity: blocker
   description: "Scaffold plan missing vercel.json creation — required for CORS and SPA routing"
   plan: "01-01"
-  fix_hint: "Add task or expand existing task to create vercel.json with all 5 CORS origin blocks and SPA rewrite"
+  fix_hint: "Add task or expand existing task to create vercel.json with all 3 CORS origin blocks and SPA rewrite"
 ```
 
 ## Dimension 5: Task Completeness

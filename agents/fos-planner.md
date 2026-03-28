@@ -134,7 +134,7 @@ Phase 1 ALWAYS produces a single plan that scaffolds the entire app. This plan u
 - `index.css` goes to `src/styles/index.css`
 - `test-setup.ts` goes to `src/test/setup.ts`
 - Dark theme CSS must include ALL required variables (see verification-rules.md T-01)
-- `vercel.json` must include all 5 CORS origins (see verification-rules.md C-01)
+- `vercel.json` must include all 3 CORS origins (see verification-rules.md C-01)
 - `<body class="dark">` must be in `index.html` (T-02)
 - Plus Jakarta Sans font must be loaded (T-03)
 

@@ -142,7 +142,7 @@ export default {
 
 ### `vercel.json`
 
-See [deployment.md](deployment.md) for the full file. All apps share the same CORS configuration with 5 origin blocks.
+See [deployment.md](deployment.md) for the full file. All apps share the same CORS configuration with 3 origin blocks.
 
 ---
 

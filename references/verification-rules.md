@@ -261,6 +261,7 @@ Method-to-permission mapping follows the pattern:
 - `sdk.getOffices().<method>()` --> `offices:<method>`
 - `sdk.getThirdParty().<method>()` --> `thirdParty:<method>`
 - `sdk.getChain().<method>()` --> `chain:<method>`
+- `sdk.getNavigation().<method>()` --> `navigation:<method>`
 
 **Pass condition:** No SDK method is called without the corresponding permission being declared.
 
@@ -384,7 +385,7 @@ The `@layer base` block must include:
 | I-02 | SDK           | createStandaloneHTML() fallback in Layout.tsx        | Error    |
 | I-03 | SDK           | SdkProvider wrapping children in Layout.tsx          | Error    |
 | I-04 | SDK           | useSdk() hook available and used                    | Error    |
-| C-01 | Configuration | vercel.json has all 5 CORS origin blocks            | Error    |
+| C-01 | Configuration | vercel.json has all 3 CORS origin blocks            | Error    |
 | C-02 | Configuration | tsconfig.json has strict mode and vitest types      | Error    |
 | C-03 | Configuration | postcss.config.js imports @tailwindcss/postcss      | Error    |
 | C-04 | Configuration | package.json has correct scripts                    | Error    |
