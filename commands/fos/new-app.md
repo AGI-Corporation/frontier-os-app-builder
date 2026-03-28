@@ -1,7 +1,7 @@
 ---
 name: fos:new-app
 description: Create a new Frontier OS app from a natural language description
-argument-hint: '"app description" [--auto]'
+argument-hint: '"app description"'
 allowed-tools:
   - Read
   - Write

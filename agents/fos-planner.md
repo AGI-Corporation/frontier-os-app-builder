@@ -67,6 +67,8 @@ Before planning, discover project context:
 - [ ] Task actions reference the decision ID they implement
 - [ ] No task implements a deferred idea
 - [ ] Discretion areas are handled reasonably
+- [ ] Every task has a `<read_first>` field listing files to read before editing
+- [ ] Every task has an `<acceptance_criteria>` field with grep-verifiable conditions
 </context_fidelity>
 
 <philosophy>
@@ -156,11 +158,16 @@ Feature phases create plans with tasks for:
 
 ## Task Anatomy
 
-Every task has four required fields:
+Every task has six required fields:
 
 **<files>:** Exact file paths created or modified.
 - Good: `src/hooks/useBalance.ts`, `src/views/Dashboard.tsx`
 - Bad: "the balance files", "relevant hooks"
+
+**<read_first>:** Files the executor MUST read before editing. Every task MUST include this field listing source-of-truth files the executor needs for context.
+- Good: `src/lib/sdk-context.tsx, src/views/Layout.tsx`
+- Bad: omitting read_first entirely, or "relevant files"
+- Rule: At minimum, include the files this task's code will import from or integrate with.
 
 **<action>:** Specific implementation instructions with CONCRETE SDK values.
 - Good: "Create `useBalance` hook that calls `sdk.getWallet().getBalanceFormatted()` returning `WalletBalanceFormatted`. Handle loading/error states with useState. The hook returns `{ balance: WalletBalanceFormatted | null, loading: boolean, error: string | null }`. Import `useSdk` from `../lib/sdk-context`. Wrap the SDK call in try/catch. Call in a useEffect with `[wallet]` dependency."
@@ -169,6 +176,13 @@ Every task has four required fields:
 **<verify>:** How to prove the task is complete.
 - Good: `grep -q "getBalanceFormatted" src/hooks/useBalance.ts && npx tsc --noEmit`
 - Bad: "It works"
+
+**<acceptance_criteria>:** Grep-verifiable conditions the executor checks programmatically. Every task MUST include this field.
+- Good:
+  - `grep -q "getBalanceFormatted" src/hooks/useBalance.ts`
+  - `grep -q "loading" src/hooks/useBalance.ts`
+  - `npx tsc --noEmit` exits 0
+- Bad: "It compiles", or omitting acceptance_criteria entirely
 
 **<done>:** Acceptance criteria — measurable state of completion.
 - Good: "`useBalance.ts` exports a hook that returns `{ balance, loading, error }`. TypeScript compiles without errors. The hook calls `getBalanceFormatted()` with proper error handling."

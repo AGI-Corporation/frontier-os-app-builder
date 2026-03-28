@@ -171,11 +171,21 @@ For each plan file in `incomplete_plans`:
    **Completion verification (per plan):**
    ```bash
    SUMMARY_FILE="$PHASE_DIR/[plan_prefix]-SUMMARY.md"
-   test -f "$SUMMARY_FILE" && echo "complete" || echo "incomplete"
+   if [ ! -f "$SUMMARY_FILE" ]; then
+     echo "incomplete"
+   elif grep -q "Self-Check: FAILED" "$SUMMARY_FILE"; then
+     echo "self-check-failed"
+   else
+     echo "complete"
+   fi
    ```
 
-   If SUMMARY.md exists and git log shows recent commits for this plan: treat as complete.
-   If SUMMARY.md missing after agent returns: report as failed.
+   - **complete:** SUMMARY.md exists, self-check passed, git log shows recent commits. Treat as successful.
+   - **self-check-failed:** SUMMARY.md exists but executor detected issues. Read the SUMMARY.md to extract what failed, then ask:
+     - "Retry this plan?" — re-spawn the executor
+     - "Fix manually?" — exit with pointer to SUMMARY.md
+     - "Continue anyway?" — note the gap for the verifier
+   - **incomplete:** SUMMARY.md missing after agent returns. Either the agent crashed or hit a checkpoint (see handle_checkpoints step). Report as failed.
 
 4. **Post-wave hook validation (parallel mode):**
 
@@ -216,6 +226,93 @@ For each plan file in `incomplete_plans`:
    - If stop: save state and exit
 </step>
 
+<step name="handle_checkpoints">
+**Handle executor agents that returned checkpoint state instead of completion.**
+
+When an executor agent returns a structured checkpoint (output contains `## CHECKPOINT REACHED` and no SUMMARY.md was created), it means a `checkpoint:human-verify` or `checkpoint:decision` task was encountered.
+
+**Detection:** After each executor returns in a wave, check:
+- If SUMMARY.md exists for that plan: agent completed normally. Skip this step.
+- If SUMMARY.md does NOT exist AND agent output contains `## CHECKPOINT REACHED`: checkpoint hit.
+
+**For each checkpoint:**
+
+1. **Parse the checkpoint return:**
+   - Type: `human-verify` or `decision`
+   - Plan ID and progress (completed/total tasks)
+   - Completed tasks table (with commit hashes)
+   - Checkpoint details (what to verify or decide)
+   - Awaiting section (what user needs to provide)
+
+2. **Present to user:**
+   ```
+   ## Checkpoint: [Type]
+
+   **Plan:** [plan ID] — [plan name]
+   **Progress:** [completed]/[total] tasks complete
+
+   [Checkpoint details from agent return]
+
+   [Awaiting section from agent return]
+   ```
+
+   Use AskUserQuestion:
+   - header: "Checkpoint: [Type]"
+   - question: "[Awaiting section content]"
+   - If human-verify: options: ["Approved", "Issues found — describe below"]
+   - If decision: options from checkpoint details
+
+3. **Spawn a FRESH continuation executor:**
+
+   ```
+   Task(
+     subagent_type="fos-executor",
+     isolation="worktree",
+     prompt="
+       <objective>
+       Continue execution of plan [plan_number], Phase [phase_number]-[phase_name].
+       Previous agent completed [N] tasks before hitting a checkpoint.
+       Resume from Task [resume_task_number]: [resume_task_name].
+       </objective>
+
+       <completed_tasks>
+       [Completed tasks table from checkpoint return — task names + commit hashes]
+       </completed_tasks>
+
+       <user_response>
+       [User's response to checkpoint]
+       </user_response>
+
+       <resume_instructions>
+       Start from Task [resume_task_number]: [resume_task_name].
+       Verify previous commits exist before continuing.
+       Do NOT redo completed tasks.
+       </resume_instructions>
+
+       <execution_context>
+       @$HOME/.claude/frontier-os-app-builder/workflows/execute-plan.md
+       @$HOME/.claude/frontier-os-app-builder/templates/state/summary.md
+       @$HOME/.claude/frontier-os-app-builder/references/sdk-surface.md
+       @$HOME/.claude/frontier-os-app-builder/references/app-patterns.md
+       @$HOME/.claude/frontier-os-app-builder/references/verification-rules.md
+       </execution_context>
+
+       <files_to_read>
+       Read these files at execution start using the Read tool:
+       - $PHASE_DIR/[plan_file] (The plan to execute)
+       - .frontier-app/PROJECT.md (App vision, SDK modules)
+       - .frontier-app/manifest.json (Permissions)
+       - .frontier-app/STATE.md (Current state)
+       </files_to_read>
+     "
+   )
+   ```
+
+4. **Wait for continuation agent.** If it hits another checkpoint, repeat from step 1. If it completes (SUMMARY.md created), treat as normal completion.
+
+**Why fresh agent, not resume:** Fresh agents with explicit completed-task state are more reliable than attempting to resume a paused agent context.
+</step>
+
 <step name="spawn_verifier">
 **After all waves complete: verify the phase.**
 
@@ -252,7 +349,7 @@ Task(
     verified_date, checks_passed, gaps fields, then full check results by category).
 
     Then return structured result to the orchestrator:
-    - verdict: PASS or FAIL
+    - verdict: PASSED or GAPS_FOUND
     - criteria_results: each success criterion with pass/fail
     - gaps: list of gaps found (if any)
     - suggestions: optional improvements
@@ -261,24 +358,46 @@ Task(
 )
 ```
 
-**If verifier returns FAIL:**
-```
-## Verification Issues
-
-The verifier found [count] issue(s):
-
-1. [Issue description]
-2. [Issue description]
-
-Options:
-- Generate fix plans for these gaps
-- Address manually and re-verify
-- Accept and move on (gaps noted)
+**Parse verifier verdict from VERIFICATION.md:**
+```bash
+VERIFICATION_FILE="$PHASE_DIR/${PADDED}-VERIFICATION.md"
+VERDICT=$(grep -m1 "^status:" "$VERIFICATION_FILE" | awk '{print $2}')
 ```
 
-Use AskUserQuestion to let user decide.
+**If verdict is `passed`:**
+Verifier confirmed phase delivers on its promises. Continue to update_state_and_roadmap.
 
-**If "Generate fix plans":** Create gap-closure plans in the phase directory and re-execute.
+**If verdict is `gaps_found`:**
+```
+## Verification: Gaps Found
+
+Phase [N]: [Name] — [checks_passed] checks passed, gaps remain.
+
+| # | Check | Issue | Severity |
+|---|-------|-------|----------|
+| 1 | [Check ID] | [What failed] | Blocker/Warning |
+| 2 | [Check ID] | [What failed] | Blocker/Warning |
+
+[Gap details from VERIFICATION.md Gaps section]
+```
+
+Use AskUserQuestion:
+- header: "Verification Gaps"
+- question: "How do you want to handle these gaps?"
+- options:
+  - "Generate gap-closure plans and re-execute" — Creates fix plans, executes them, then re-verifies
+  - "Fix manually and re-verify" — You address the issues, then run `/fos:execute [N]` again
+  - "Accept with gaps noted" — Mark phase as partial, gaps documented in VERIFICATION.md
+
+**If "Generate gap-closure plans":**
+1. Read the Gaps section from VERIFICATION.md
+2. Spawn fos-planner with the gap list as context to create targeted fix plans
+3. Execute the new plans (re-enter execute_waves for the gap-closure plans only)
+4. Re-run verifier after gap-closure plans complete
+
+**If "Fix manually":** Exit with message: "Fix the gaps listed in `$VERIFICATION_FILE`, then run `/fos:execute [N]` to re-verify."
+
+**If "Accept with gaps":** Continue to update_state_and_roadmap. Update phase status to "partial" instead of "complete" in STATE.md. Gaps remain documented in VERIFICATION.md.
 </step>
 
 <step name="update_state_and_roadmap">

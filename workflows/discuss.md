@@ -166,8 +166,54 @@ Structure the extracted information:
 **If no prior CONTEXT.md files exist:** Continue without — this is expected for Phase 1.
 </step>
 
+<step name="scout_codebase">
+**Lightweight scan of existing code to inform gray area identification.**
+
+Skip this step for Phase 1 (no source code exists yet).
+
+**Step 1: Check for existing source code**
+```bash
+ls src/ 2>/dev/null || true
+```
+
+If no `src/` directory exists, skip to analyze_phase.
+
+**Step 2: Targeted grep for phase-related terms**
+
+Extract key terms from the phase goal (e.g., "wallet" phase -> "balance", "transfer", "payment"; "events" phase -> "event", "RSVP", "calendar").
+
+```bash
+# Find files related to phase goal terms
+grep -rl "{term1}\|{term2}" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -10 || true
+
+# Find existing hooks, views, and utilities
+ls src/hooks/ 2>/dev/null || true
+ls src/views/ 2>/dev/null || true
+ls src/lib/ 2>/dev/null || true
+```
+
+**Step 3: Read 3-5 relevant files**
+
+Read the most relevant files to understand existing patterns:
+- How SDK modules are currently used (hook patterns, error handling)
+- Component structure and Tailwind usage
+- Integration points (routes, navigation, providers)
+
+**Step 4: Build internal codebase_context**
+
+From the scan, identify:
+- **Reusable assets** — existing hooks, components, utilities this phase can use
+- **Established patterns** — how the codebase does state management, SDK calls, styling
+- **Integration points** — where new code would connect (routes, nav, Layout)
+- **SDK patterns** — how existing hooks call SDK methods, handle loading/error
+
+Store as internal `<codebase_context>` for use in analyze_phase. This is NOT written to a file — it informs the current session only.
+</step>
+
 <step name="analyze_phase">
-**Identify gray areas based on phase goal + SDK modules.**
+**Identify gray areas based on phase goal + SDK modules + existing codebase patterns.**
+
+**Use `prior_decisions` and `codebase_context` (if available) to ground the analysis.** Codebase context reveals what patterns are already established — gray areas should focus on genuinely new decisions, not things the codebase already answers.
 
 Gray areas are implementation decisions the user cares about — things that could go multiple ways and would change the result.
 
