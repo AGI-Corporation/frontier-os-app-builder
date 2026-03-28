@@ -46,54 +46,6 @@ All Frontier OS apps deploy to Vercel. The `vercel.json` file is identical acros
         {
           "type": "header",
           "key": "Origin",
-          "value": "https://alpha.os.frontiertower.io"
-        }
-      ],
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://alpha.os.frontiertower.io"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "Origin",
-          "value": "https://beta.os.frontiertower.io"
-        }
-      ],
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://beta.os.frontiertower.io"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "Origin",
           "value": "https://sandbox.os.frontiertower.io"
         }
       ],
@@ -148,14 +100,12 @@ Vercel does not support multiple values in a single `Access-Control-Allow-Origin
 
 ## Allowed Origins
 
-The Frontier Wallet PWA runs at these 5 origins. Apps must allow CORS from all of them:
+The Frontier Wallet PWA runs at these 3 origins. Apps must allow CORS from all of them:
 
 | Origin                                    | Environment  | Description                                                    |
 | ----------------------------------------- | ------------ | -------------------------------------------------------------- |
 | `http://localhost:5173`                   | Development  | Local Vite dev server for the PWA                              |
 | `https://sandbox.os.frontiertower.io`     | Sandbox      | Sandbox environment                                            |
-| `https://alpha.os.frontiertower.io`       | Alpha        | Early access, design preview -- "there will be dragons"        |
-| `https://beta.os.frontiertower.io`        | Beta         | Internally QA'd and tested, no external audit                  |
 | `https://os.frontiertower.io`             | Production   | Production ready                                               |
 
 These origins are also hardcoded in the SDK at `@frontiertower/frontier-sdk/ui-utils/detection.ts` as `ALLOWED_ORIGINS`.

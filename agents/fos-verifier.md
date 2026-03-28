@@ -154,8 +154,8 @@ If any file outside `sdk-context.tsx` instantiates `new FrontierSDK()` directly,
 ### C-01: vercel.json CORS origins
 
 ```bash
-# Check all 5 origins present
-for origin in "os.frontiertower.io" "alpha.os.frontiertower.io" "beta.os.frontiertower.io" "sandbox.os.frontiertower.io" "localhost:5173"; do
+# Check all 3 origins present
+for origin in "os.frontiertower.io" "sandbox.os.frontiertower.io" "localhost:5173"; do
   grep -q "$origin" vercel.json && echo "PASS: $origin" || echo "FAIL: $origin missing from vercel.json"
 done
 

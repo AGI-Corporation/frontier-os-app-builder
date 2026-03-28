@@ -141,15 +141,13 @@ When inside the Frontier app, the Layout must wrap its children (either `<Outlet
 
 These verify configuration files have the correct content.
 
-### C-01: vercel.json has all 5 CORS origin blocks
+### C-01: vercel.json has all 3 CORS origin blocks
 
-The `vercel.json` file must contain exactly 5 header blocks, one for each allowed origin:
+The `vercel.json` file must contain exactly 3 header blocks, one for each allowed origin:
 
 1. `https://os.frontiertower.io`
-2. `https://alpha.os.frontiertower.io`
-3. `https://beta.os.frontiertower.io`
-4. `https://sandbox.os.frontiertower.io`
-5. `http://localhost:5173`
+2. `https://sandbox.os.frontiertower.io`
+3. `http://localhost:5173`
 
 Each block must include:
 - `Access-Control-Allow-Origin` matching the origin
@@ -161,7 +159,7 @@ It must also include the SPA rewrite:
 { "source": "/(.*)", "destination": "/index.html" }
 ```
 
-**Pass condition:** All 5 origin blocks are present with correct headers. The rewrite rule exists.
+**Pass condition:** All 3 origin blocks are present with correct headers. The rewrite rule exists.
 
 ### C-02: tsconfig.json has strict mode and vitest types
 

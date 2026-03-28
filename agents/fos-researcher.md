@@ -50,7 +50,7 @@ All production apps live at `~/frontieros/frontier-os-app-*`. Use this mapping t
 ### Wallet / Payments / Transactions
 **Apps:** `frontier-os-app-pos`, `frontier-os-app-pos-payment`, `frontier-os-app-subscriptions`
 **What to study:**
-- `payWithFrontierDollar()` and `transferOverallFrontierDollar()` call patterns
+- `transferFrontierDollar()` and `transferOverallFrontierDollar()` call patterns
 - Payment confirmation flows and receipt UI
 - Balance display with `getBalanceFormatted()`
 - Transaction error handling and retry patterns

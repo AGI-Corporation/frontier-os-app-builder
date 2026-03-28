@@ -227,7 +227,7 @@ issue:
 issue:
   dimension: task_completeness
   severity: blocker
-  description: "Task 2 action says 'create payment handler' without specifying which SDK method (payWithFrontierDollar? transferOverallFrontierDollar?)"
+  description: "Task 2 action says 'create payment handler' without specifying which SDK method (transferFrontierDollar? transferOverallFrontierDollar?)"
   plan: "02-01"
   task: 2
   fix_hint: "Specify exact SDK method, parameters, return type, and error handling in action"

@@ -13,7 +13,7 @@ Reference for the standard structure, conventions, and tech stack used by all Fr
 | Language     | TypeScript                      | 5.9       |
 | CSS          | Tailwind CSS (via PostCSS)      | 4         |
 | Testing      | Vitest + jsdom + Testing Library| 4 / 27    |
-| SDK          | @frontiertower/frontier-sdk     | 0.15.0    |
+| SDK          | @frontiertower/frontier-sdk     | 0.21.0    |
 | Routing      | react-router-dom                | 7         |
 
 ---

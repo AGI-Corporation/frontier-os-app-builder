@@ -1,4 +1,4 @@
-# Frontier SDK Surface Reference
+# Frontier SDK Surface Reference (v0.21.0)
 
 Complete API reference for `@frontiertower/frontier-sdk`. Every method, type, and permission extracted from source.
 
@@ -30,7 +30,7 @@ On construction the SDK:
 
 #### `destroy(): void`
 
-Call when the app is being torn down. Removes the message event listener and clears all pending request promises.
+Call when the app is being torn down. Removes the message event listener, calls `this.navigation.destroy()` to clean up deep-link listeners, and clears all pending request promises.
 
 #### Internal: `request(type: string, payload?: any): Promise<any>`
 
@@ -167,15 +167,6 @@ transferOverallFrontierDollar(
 ): Promise<UserOperationReceipt>
 ```
 Transfer using iFND first, falling back to FND for the remainder. Permission: `wallet:transferOverallFrontierDollar`
-
-```typescript
-payWithFrontierDollar(
-  to: string,
-  amount: string,
-  paymentId: string
-): Promise<UserOperationReceipt>
-```
-Pay via PaymentRouter with a UUID payment reference. Uses iFND with priority, falling back to FND. Supports multi-token split in a single transaction. Permission: `wallet:payWithFrontierDollar`
 
 ```typescript
 getSupportedTokens(): Promise<string[]>
@@ -1341,34 +1332,26 @@ interface ListAccessPassesParams {
 
 ## 11. Navigation Module
 
-Access: `sdk.getNavigation()` returns `NavigationAccess`
-
-App-to-app deep linking. Allows apps to navigate to other Frontier OS apps and receive incoming deep link data.
+Access via `sdk.getNavigation()`. App-to-app deep linking. Allows apps to navigate to other Frontier OS apps and receive incoming deep link data.
 
 ### Methods
 
-#### `openApp(appId: string, options?: NavigationOpenAppOptions): Promise<void>`
+```typescript
+openApp(appId: string, options?: NavigationOpenAppOptions): Promise<void>
+```
+Navigate the host to another app in the Frontier OS ecosystem. `appId` is the target app ID from the Frontier app registry. `options.path` provides an optional deep link path for the target app. `options.params` provides optional key-value params for the target app. Permission: `navigation:openApp`
 
-Navigate the host to another app in the Frontier OS ecosystem.
+```typescript
+close(): Promise<void>
+```
+Close the current app and return to the previous screen. Permission: `navigation:close`
 
-- **Permission:** `navigation:openApp` or `navigation:*`
-- `appId` — target app ID from the Frontier app registry
-- `options.path` — optional deep link path for the target app
-- `options.params` — optional key-value params for the target app
+```typescript
+onDeepLink(callback: (data: DeepLinkData) => void): () => void
+```
+Register a callback for incoming deep link data. Called when this app was opened via another app's `openApp()` call. Returns an unsubscribe function. No permission required (passive listener).
 
-#### `close(): Promise<void>`
-
-Close the current app and return to the previous screen.
-
-- **Permission:** `navigation:close` or `navigation:*`
-
-#### `onDeepLink(callback: (data: DeepLinkData) => void): () => void`
-
-Register a callback for incoming deep link data. Called when this app was opened via another app's `openApp()` call. Returns an unsubscribe function.
-
-No permission required (passive listener).
-
-### Types
+### Navigation Types
 
 ```typescript
 interface NavigationOpenAppOptions {
@@ -1381,14 +1364,6 @@ interface DeepLinkData {
   params?: Record<string, string>;
 }
 ```
-
-### Permissions
-
-| Permission | Description |
-|---|---|
-| `navigation:openApp` | Navigate to another app |
-| `navigation:close` | Close current app |
-| `navigation:*` | All navigation permissions |
 
 ---
 
@@ -1426,26 +1401,22 @@ Returns the same styled "Frontier Wallet Required" message as an HTML string (wi
 const ALLOWED_ORIGINS: string[] = [
   'http://localhost:5173',
   'https://sandbox.os.frontiertower.io',
-  'https://alpha.os.frontiertower.io',
-  'https://beta.os.frontiertower.io',
   'https://os.frontiertower.io',
 ];
 ```
 
 ---
 
-## 12. Security
+## 13. Security
 
 ### Allowed Origins
 
-The SDK defines five allowed Frontier Wallet origins. Apps should only accept messages from these:
+The SDK defines three allowed Frontier Wallet origins. Apps should only accept messages from these:
 
 | Environment | Origin |
 |---|---|
 | Development | `http://localhost:5173` |
 | Sandbox | `https://sandbox.os.frontiertower.io` |
-| Alpha | `https://alpha.os.frontiertower.io` |
-| Beta | `https://beta.os.frontiertower.io` |
 | Production | `https://os.frontiertower.io` |
 
 ### Access Controls Verification
@@ -1463,7 +1434,7 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 |---|---|
 | `test` | `04aab6c393...` (test-only key) |
 | `development`, `local`, `sandbox`, `staging` | `04dc3ab0e1...` (shared dev/sandbox key) |
-| `alpha`, `beta`, `production` | `045d1a0f9c...` (production key) |
+| `production` | `045d1a0f9c...` (production key) |
 
 **Rule: Always use `getVerifiedAccessControls()` for access-gating decisions.** Do not trust unsigned user data from other SDK methods for gating features, content, or permissions.
 
@@ -1475,9 +1446,9 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 
 ---
 
-## 13. Complete Permissions List (76 permissions across 9 modules)
+## 14. Complete Permissions List (84 permissions across 10 modules)
 
-### Wallet (23 permissions)
+### Wallet (22 permissions)
 
 | Permission | Description |
 |---|---|
@@ -1503,7 +1474,6 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 | `wallet:linkEuroAccount` | Link EUR/IBAN bank account for EUR withdrawals |
 | `wallet:deleteLinkedBank` | Delete a linked bank account |
 | `wallet:getDeprecatedSmartAccounts` | Get deprecated smart accounts with active gas sponsorship |
-| `wallet:payWithFrontierDollar` | Pay via PaymentRouter with payment reference ID |
 
 ### Storage (4 permissions)
 
@@ -1537,22 +1507,6 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 | `user:createSignupRequest` | Submit membership signup request with crypto payment |
 | `user:getVerifiedAccessControls` | Get cryptographically verified access controls |
 
-### Communities (11 permissions)
-
-| Permission | Description |
-|---|---|
-| `communities:listCommunities` | List all visible communities (paginated) |
-| `communities:getCommunity` | Get a community by ID or slug |
-| `communities:createInternshipPass` | Create an internship pass for a managed community |
-| `communities:listInternshipPasses` | List internship passes for managed communities |
-| `communities:getInternshipPass` | Retrieve an internship pass by ID |
-| `communities:revokeInternshipPass` | Revoke an internship pass |
-| `communities:createReassignRequest` | Create a member reassignment request |
-| `communities:listReassignRequests` | List pending reassignment requests |
-| `communities:getReassignRequest` | Retrieve a reassignment request by ID |
-| `communities:acceptReassignRequest` | Accept a reassignment request (moves member) |
-| `communities:rejectReassignRequest` | Reject a reassignment request |
-
 ### Partnerships (7 permissions)
 
 | Permission | Description |
@@ -1585,6 +1539,22 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 | `thirdParty:deleteWebhook` | Delete a webhook |
 | `thirdParty:rotateWebhookSigningKey` | Rotate webhook signing key |
 
+### Communities (11 permissions)
+
+| Permission | Description |
+|---|---|
+| `communities:listCommunities` | List all visible communities (paginated) |
+| `communities:getCommunity` | Get a community by ID or slug |
+| `communities:createInternshipPass` | Create an internship pass for a managed community |
+| `communities:listInternshipPasses` | List internship passes for managed communities |
+| `communities:getInternshipPass` | Retrieve an internship pass by ID |
+| `communities:revokeInternshipPass` | Revoke an internship pass |
+| `communities:createReassignRequest` | Create a member reassignment request |
+| `communities:listReassignRequests` | List pending reassignment requests |
+| `communities:getReassignRequest` | Retrieve a reassignment request by ID |
+| `communities:acceptReassignRequest` | Accept a reassignment request (moves member) |
+| `communities:rejectReassignRequest` | Reject a reassignment request |
+
 ### Events (6 permissions)
 
 | Permission | Description |
@@ -1605,6 +1575,13 @@ Supported stages and their public keys (uncompressed secp256k1, hex):
 | `offices:getAccessPass` | Retrieve an access pass by ID |
 | `offices:revokeAccessPass` | Revoke an access pass |
 
+### Navigation (2 permissions)
+
+| Permission | Description |
+|---|---|
+| `navigation:openApp` | Navigate to another app |
+| `navigation:close` | Close current app |
+
 ### Wildcard Permissions
 
 Each module supports a wildcard permission that grants access to all methods in that module:
@@ -1615,8 +1592,9 @@ Each module supports a wildcard permission that grants access to all methods in 
 | `storage:*` | All storage permissions |
 | `chain:*` | All chain permissions |
 | `user:*` | All user permissions |
-| `communities:*` | All communities permissions |
 | `partnerships:*` | All partnerships permissions |
 | `thirdParty:*` | All third-party permissions |
+| `communities:*` | All communities permissions |
 | `events:*` | All events permissions |
 | `offices:*` | All offices permissions |
+| `navigation:*` | All navigation permissions |

@@ -270,9 +270,9 @@ const MODULE_KEYWORDS = {
                'withdraw', 'off-ramp', 'bank', 'fiat', 'subscription', 'billing', 'price',
                'cost', 'fee', 'tip', 'donate', 'donation'],
     getter: 'sdk.getWallet()',
-    commonMethods: ['getBalance', 'getBalanceFormatted', 'transferFrontierDollar', 'payWithFrontierDollar'],
+    commonMethods: ['getBalance', 'getBalanceFormatted', 'transferFrontierDollar', 'transferOverallFrontierDollar'],
     permissions: ['wallet:getBalance', 'wallet:getBalanceFormatted', 'wallet:getAddress',
-                  'wallet:transferFrontierDollar', 'wallet:payWithFrontierDollar']
+                  'wallet:transferFrontierDollar', 'wallet:transferOverallFrontierDollar']
   },
   User: {
     keywords: ['user', 'profile', 'account', 'member', 'membership', 'auth', 'login',
@@ -441,8 +441,6 @@ function cmdValidateStructure(cwd, flags) {
     const origins = [
       'http://localhost:5173',
       'https://sandbox.os.frontiertower.io',
-      'https://alpha.os.frontiertower.io',
-      'https://beta.os.frontiertower.io',
       'https://os.frontiertower.io'
     ];
     for (const origin of origins) {

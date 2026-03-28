@@ -25,7 +25,7 @@ Valid FOS subagent types (use exact names):
    - "Optimistic UI for RSVP" -> researcher looks into optimistic update patterns
 
 2. **fos-planner** — Reads CONTEXT.md to know WHAT decisions are locked
-   - "P2P transfers only" -> planner scopes to transferFrontierDollar(), not payWithFrontierDollar()
+   - "P2P transfers only" -> planner scopes to transferFrontierDollar(), not transferOverallFrontierDollar()
    - "Claude's Discretion: loading skeleton" -> planner can decide approach
 
 **Your job:** Capture decisions clearly enough that downstream agents can act on them without asking the user again.

@@ -30,7 +30,7 @@ Given a natural-language business description of an app:
 - `transferFrontierDollar(to, amount)` -- send FND to another address
 - `transferInternalFrontierDollar(to, amount)` -- send iFND
 - `transferOverallFrontierDollar(to, amount)` -- send FND, preferring iFND first
-- `payWithFrontierDollar(paymentRefId)` -- pay via PaymentRouter with a reference ID
+- `transferOverallFrontierDollar(to, amount)` -- send FND, preferring iFND first, falling back to FND
 - `swap(params)` / `quoteSwap(params)` -- token swap operations
 - `getUsdDepositInstructions()` / `getEurDepositInstructions()` -- fiat on-ramp
 - `getLinkedBanks()` / `linkUsBankAccount()` / `linkEuroAccount()` -- fiat off-ramp
@@ -61,7 +61,7 @@ Given a natural-language business description of an app:
 | `wallet:linkEuroAccount`              | Link a EUR/IBAN bank account                  |
 | `wallet:deleteLinkedBank`             | Delete a linked bank account                  |
 | `wallet:getDeprecatedSmartAccounts`    | Get deprecated smart accounts                 |
-| `wallet:payWithFrontierDollar`         | Pay via PaymentRouter with reference ID       |
+| `wallet:transferOverallFrontierDollar` | Transfer FND, preferring iFND first           |
 
 **Example business descriptions:**
 - "A tipping app where users can send FND to content creators"
@@ -314,7 +314,7 @@ Given a natural-language business description of an app:
 
 | Module      | Matched keywords            | Permissions                                      |
 | ----------- | --------------------------- | ------------------------------------------------ |
-| Wallet      | pay, FND                    | `wallet:getBalance`, `wallet:transferFrontierDollar` or `wallet:payWithFrontierDollar` |
+| Wallet      | pay, FND                    | `wallet:getBalance`, `wallet:transferFrontierDollar` or `wallet:transferOverallFrontierDollar` |
 | Storage     | (always)                    | `storage:get`, `storage:set`                     |
 | Chain       | (always)                    | `chain:getCurrentNetwork`, `chain:getContractAddresses` |
 | User        | users, booking              | `user:getDetails`, `user:getProfile`             |
@@ -333,7 +333,7 @@ Given a natural-language business description of an app:
 
 | Module      | Matched keywords            | Permissions                                      |
 | ----------- | --------------------------- | ------------------------------------------------ |
-| Wallet      | subscription (payments)     | `wallet:getBalance`, `wallet:payWithFrontierDollar` |
+| Wallet      | subscription (payments)     | `wallet:getBalance`, `wallet:transferOverallFrontierDollar` |
 | User        | signup, membership, managing | `user:getDetails`, `user:getVerifiedAccessControls`, `user:createSignupRequest` |
 | Storage     | (always)                    | `storage:get`, `storage:set`                     |
 | Chain       | (always)                    | `chain:getCurrentNetwork`, `chain:getContractAddresses` |
