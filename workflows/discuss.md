@@ -219,7 +219,21 @@ Gray areas are implementation decisions the user cares about — things that cou
 
 **If `prior_decisions` context exists:** Filter out gray areas already decided in prior phases. Only present areas that are genuinely new or where the prior decision needs revisiting for this phase's specific context.
 
-**For Phase 1 (Scaffold + SDK Core):**
+### SDK Integration Phase Handling
+
+If the current phase is the SDK Integration phase (matches `sdkPhase` from manifest.json):
+
+This phase is fully mechanical — zero gray areas. Skip the normal discussion flow:
+
+1. Inform the user: "Phase [N] is SDK Integration — a mechanical step with no design decisions. Proceeding to create minimal context."
+2. Produce a minimal CONTEXT.md with:
+   - **Phase Boundary:** "Wire real Frontier SDK, create adapter, upgrade Layout for iframe detection"
+   - **Implementation Decisions:** "D-01: Follow standard SDK Integration template — no deviations needed"
+   - **Claude's Discretion:** (empty)
+   - **Deferred Ideas:** (empty)
+3. Route directly to `/fos:plan N`
+
+**For Phase 1 (Scaffold + Standalone Shell):**
 Minimal gray areas — scaffold is well-defined. Only ask:
 - "Router or single-component app?" (if more than 2 feature phases exist)
 - That's usually it. Phase 1 is standardized.
@@ -229,6 +243,8 @@ Generate phase-specific gray areas based on:
 1. The phase goal from ROADMAP.md
 2. The SDK modules involved
 3. The domain being built
+
+For feature phases, gray areas are framed in terms of standalone UX and mock behavior — not SDK-specific concerns. The SDK is not wired in during feature phases, so questions about iframe behavior, SDK error modes, or CORS are not relevant until the SDK Integration phase.
 
 **Gray area identification by domain:**
 
@@ -244,11 +260,11 @@ Something users DO (action feature):
 - Error recovery (retry, fallback, message)
 - Success feedback (toast, animation, redirect)
 
-Something involving SDK modules:
-- Which SDK methods to use for the feature
+Something involving service modules:
+- Which service methods to use for the feature
+- How to handle mock data vs real data transitions
 - Data refresh strategy (poll, manual, real-time)
-- Caching and offline behavior
-- Error handling when SDK calls fail
+- Error handling when service calls fail
 
 **Don't use generic labels** (UI, UX, Behavior). Generate concrete, phase-specific areas:
 
@@ -317,7 +333,7 @@ AskUserQuestion:
     - "With options" — Let user choose attendance type (going, maybe, not going)
 ```
 
-**SDK-related areas** — ask about behavior, not implementation:
+**Service-related areas** — ask about behavior, not implementation:
 ```
 AskUserQuestion:
   header: "Balance Display"

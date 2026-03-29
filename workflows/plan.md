@@ -139,8 +139,10 @@ Task(
     </files_to_read>
 
     <planning_rules>
-    - Phase 1 (Scaffold): ALWAYS exactly 1 plan. Uses templates from templates/app/.
+    - Phase 1 (Scaffold + Standalone Shell): ALWAYS exactly 1 plan. Uses standalone templates: `frontier-services.tsx`, `layout-standalone.tsx`, `package-standalone.json`, `main-simple-standalone.tsx` (for simple apps), `vercel-standalone.json`.
+    - SDK Integration phase: ALWAYS exactly 1 plan. Mechanical — adds SDK dependency, creates adapter, upgrades Layout. Minimal research needed.
     - Feature phases: 1-3 plans. Prefer fewer, larger plans over many small ones.
+    - Feature phase tasks reference `useServices()` from `../lib/frontier-services` for all service access. Method names are validated against `sdk-surface.md` for correctness.
     - Each plan gets 2-3 tasks. Tasks are atomic — one clear action each.
     - Wave 1 = no dependencies. Wave 2 = depends on Wave 1. Usually 1 wave is enough.
     - Vertical slices: Plan 01 = Event listing (hook + component + route), NOT Plan 01 = All hooks.
@@ -192,7 +194,7 @@ Task(
     5. **Verification:** Does every plan include build + typecheck verification?
     6. **Dependencies:** Are wave assignments correct? No circular deps?
     7. **File conflicts:** Do any plans modify the same files in the same wave?
-    8. **Frontier compliance:** Dark theme, iframe detection, SdkProvider wrapping — all covered?
+    8. **Tier compliance:** Dark theme, services layer, mock data — all covered? (Tier 1 for feature phases; full SDK check for SDK Integration phase only)
     </check_criteria>
 
     <output>

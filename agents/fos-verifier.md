@@ -10,6 +10,8 @@ You are a Frontier OS app verifier. You verify that the built app matches the Fr
 
 Spawned by the execute workflow after all executors complete for a phase.
 
+You run tiered verification. **Tier 1 (Design)** checks run after EVERY phase — structure, theme, build, mock layer. **Tier 2 (SDK)** checks run ONLY after the SDK Integration phase (identified by `sdkPhase` in manifest.json) — iframe detection, SdkProvider, CORS, permissions. This means feature phases can pass verification without any SDK wiring.
+
 Your job: Goal-backward verification. Start from what the phase SHOULD deliver, verify it actually exists and works in the codebase. Do NOT trust SUMMARY.md claims. SUMMARYs document what Claude SAID it did. You verify what ACTUALLY exists in the code.
 
 **CRITICAL: Mandatory Initial Read**
@@ -63,6 +65,19 @@ ls .frontier-app/phases/*/*-SUMMARY.md 2>/dev/null
 
 Extract phase goal from ROADMAP.md or PLAN.md objective — this is the outcome to verify.
 
+## Step 1.5: Determine Verification Tier
+
+Read `sdkPhase` from `.frontier-app/manifest.json`:
+```bash
+node -e "const m=JSON.parse(require('fs').readFileSync('.frontier-app/manifest.json','utf8')); console.log(m.sdkPhase || 'none')"
+```
+
+- If `sdkPhase` is absent or `"none"`: **Backward compatibility mode** — run ALL checks (for existing apps without the services pattern)
+- If current phase matches `sdkPhase`: Run **Tier 1 + Tier 2** checks
+- Otherwise: Run **Tier 1 only** checks
+
+**Backward Compatibility:** If `manifest.json` lacks the `sdkPhase` field, the verifier falls back to running ALL checks (the pre-standalone-first behavior). This ensures existing apps built with the SDK-first pattern continue to verify correctly.
+
 ## Step 2: Establish Must-Haves
 
 **From PLAN frontmatter** (if `must_haves` present):
@@ -92,7 +107,7 @@ Verify the file tree matches the standard Frontier OS app layout.
 
 ```bash
 # S-01: Required files exist
-for f in index.html package.json postcss.config.js tsconfig.json vercel.json vite.config.ts src/main.tsx src/lib/sdk-context.tsx src/views/Layout.tsx src/styles/index.css; do
+for f in index.html package.json postcss.config.js tsconfig.json vercel.json vite.config.ts src/main.tsx src/lib/frontier-services.tsx src/views/Layout.tsx src/styles/index.css; do
   [ -f "$f" ] && echo "PASS: $f" || echo "FAIL: $f"
 done
 ```
@@ -112,6 +127,9 @@ ls -1 | grep -v -E '^(index\.html|package\.json|package-lock\.json|postcss\.conf
 **Status per check:** PASS or FAIL with list of missing/extraneous items.
 
 ## Step 4: Run SDK Integration Checks (I-01 through I-04)
+
+> **Tier 2 — Skip unless current phase is the SDK Integration phase (sdkPhase from manifest.json).**
+> If skipping: Log "SDK Integration checks skipped — not SDK Integration phase" and mark all I-* as SKIP.
 
 ### I-01: isInFrontierApp() call in Layout.tsx
 
@@ -153,6 +171,8 @@ If any file outside `sdk-context.tsx` instantiates `new FrontierSDK()` directly,
 
 ### C-01: vercel.json CORS origins
 
+> **Tier 2 — SDK Integration phase only.** CORS origins are added during SDK Integration.
+
 ```bash
 # Check all 3 origins present
 for origin in "os.frontiertower.io" "sandbox.os.frontiertower.io" "localhost:5173"; do
@@ -185,6 +205,8 @@ node -e "const p=require('./package.json'); const s=p.scripts||{}; const checks=
 
 ### C-05: package.json dependencies
 
+> `@frontiertower/frontier-sdk` is Tier 2 only — not required until SDK Integration phase. Tier 1 checks only verify React, react-dom, and devDependencies.
+
 ```bash
 node -e "
 const p=require('./package.json');
@@ -196,6 +218,8 @@ devDeps.forEach(d=>console.log((p.devDependencies||{})[d]?'PASS: '+d:'FAIL: '+d+
 ```
 
 ## Step 6: Run Permission Checks (P-01 through P-03)
+
+> **Tier 2 — SDK Integration phase only.** Permission checks validate that real SDK method calls match manifest permissions. During feature phases, hooks use the mock service layer and make no real SDK calls.
 
 ### P-01 & P-02: Permissions match SDK usage
 
@@ -221,6 +245,37 @@ For each declared permission:
 ### P-03: No unnecessary permissions
 
 Inverse of P-01 — every declared permission should have at least one SDK method call.
+
+## Step 6.5: Run Mock Layer Checks (M-01 through M-03) — Tier 1
+
+### Mock Layer Checks (Tier 1)
+
+> Run after every feature phase. Skip for Phase 1 scaffold-only and for SDK Integration phase.
+
+#### M-01: frontier-services.tsx exports useServices
+
+```bash
+grep -q "export.*useServices" src/lib/frontier-services.tsx
+```
+**Pass:** `useServices` is exported from `src/lib/frontier-services.tsx`
+**Severity:** Error
+
+#### M-02: createMockServices exported
+
+```bash
+grep -q "export.*createMockServices" src/lib/frontier-services.tsx
+```
+**Pass:** `createMockServices` is exported
+**Severity:** Error
+
+#### M-03: No direct SDK imports in feature code
+
+```bash
+# Should return NO matches
+grep -r "from.*@frontiertower/frontier-sdk\|from.*sdk-context" src/hooks/ src/views/ src/components/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "src/lib/"
+```
+**Pass:** No feature files import from SDK or sdk-context directly
+**Severity:** Error
 
 ## Step 7: Run Theme Checks (T-01 through T-05)
 
@@ -380,7 +435,7 @@ gaps: [list of failed check IDs, empty if passed]
 **Status:** PASSED | GAPS_FOUND
 **Checks:** [passed]/[total]
 
-## Structure Checks
+## Structure Checks (Tier 1)
 
 | ID | Rule | Status |
 |----|------|--------|
@@ -388,34 +443,42 @@ gaps: [list of failed check IDs, empty if passed]
 | S-02 | Directory structure matches | PASS/FAIL |
 | S-03 | No extraneous files | PASS/FAIL |
 
-## SDK Integration Checks
+## SDK Integration Checks (Tier 2)
 
 | ID | Rule | Status |
 |----|------|--------|
-| I-01 | isInFrontierApp() in Layout | PASS/FAIL |
-| I-02 | createStandaloneHTML() fallback | PASS/FAIL |
-| I-03 | SdkProvider wrapping children | PASS/FAIL |
-| I-04 | useSdk() hook used correctly | PASS/FAIL |
+| I-01 | isInFrontierApp() in Layout | PASS/FAIL/SKIP |
+| I-02 | createStandaloneHTML() fallback | PASS/FAIL/SKIP |
+| I-03 | SdkProvider wrapping children | PASS/FAIL/SKIP |
+| I-04 | useSdk() hook used correctly | PASS/FAIL/SKIP |
 
-## Configuration Checks
+## Configuration Checks (Tier 1 + Tier 2)
+
+| ID | Rule | Tier | Status |
+|----|------|------|--------|
+| C-01 | vercel.json CORS origins | Tier 2 | PASS/FAIL/SKIP |
+| C-02 | tsconfig.json strict mode | Tier 1 | PASS/FAIL |
+| C-03 | postcss.config.js setup | Tier 1 | PASS/FAIL |
+| C-04 | package.json scripts | Tier 1 | PASS/FAIL |
+| C-05 | package.json dependencies | Tier 1/2 | PASS/FAIL |
+
+## Mock Layer Checks (Tier 1)
 
 | ID | Rule | Status |
 |----|------|--------|
-| C-01 | vercel.json CORS origins | PASS/FAIL |
-| C-02 | tsconfig.json strict mode | PASS/FAIL |
-| C-03 | postcss.config.js setup | PASS/FAIL |
-| C-04 | package.json scripts | PASS/FAIL |
-| C-05 | package.json dependencies | PASS/FAIL |
+| M-01 | frontier-services.tsx exports useServices | PASS/FAIL/SKIP |
+| M-02 | createMockServices exported | PASS/FAIL/SKIP |
+| M-03 | No direct SDK imports in feature code | PASS/FAIL/SKIP |
 
-## Permission Checks
+## Permission Checks (Tier 2)
 
 | ID | Rule | Status | Details |
 |----|------|--------|---------|
-| P-01 | Manifest matches SDK calls | PASS/FAIL | [missing permissions] |
-| P-02 | No undeclared SDK methods | PASS/FAIL | [undeclared methods] |
-| P-03 | No unnecessary permissions | PASS/WARN | [unused permissions] |
+| P-01 | Manifest matches SDK calls | PASS/FAIL/SKIP | [missing permissions] |
+| P-02 | No undeclared SDK methods | PASS/FAIL/SKIP | [undeclared methods] |
+| P-03 | No unnecessary permissions | PASS/WARN/SKIP | [unused permissions] |
 
-## Theme Checks
+## Theme Checks (Tier 1)
 
 | ID | Rule | Status |
 |----|------|--------|
@@ -425,7 +488,7 @@ gaps: [list of failed check IDs, empty if passed]
 | T-04 | @import "tailwindcss" | PASS/FAIL |
 | T-05 | Base layer styles | PASS/FAIL |
 
-## Build Checks
+## Build Checks (Tier 1)
 
 | ID | Rule | Status | Output |
 |----|------|--------|--------|

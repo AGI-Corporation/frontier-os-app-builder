@@ -198,9 +198,9 @@ duration: 18min
 completed: 2026-03-27
 ---
 
-# Phase 1: Scaffold + SDK Core — Plan 1 Summary
+# Phase 1: Scaffold + Standalone Shell — Plan 1 Summary
 
-**Vite + React scaffold with SdkProvider, iframe detection, dark Tailwind theme on port 5180**
+**Vite + React scaffold with services layer, mock data, dark Tailwind theme on port 5180**
 
 ## Performance
 

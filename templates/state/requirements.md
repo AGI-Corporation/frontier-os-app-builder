@@ -87,7 +87,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 **Standard Platform Requirements:**
 - PLAT-01 through PLAT-05 are ALWAYS included for every Frontier OS app
-- They always map to Phase 1 (Scaffold + SDK Core)
+- They always map to Phase 1 (Scaffold + Standalone Shell)
 - They are non-negotiable — an app without these cannot run in Frontier OS
 
 **Requirement Format:**

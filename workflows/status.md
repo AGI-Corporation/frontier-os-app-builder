@@ -97,7 +97,7 @@ done
 
 | # | Phase | Context | Plans | Done | Status |
 |---|-------|---------|-------|------|--------|
-| 1 | Scaffold + SDK Core | [yes/no] | [count] | [count]/[total] | [status] |
+| 1 | Scaffold + Standalone Shell | [yes/no] | [count] | [count]/[total] | [status] |
 | 2 | [Feature Name] | [yes/no] | [count] | [count]/[total] | [status] |
 | 3 | [Feature Name] | [yes/no] | [count] | [count]/[total] | [status] |
 

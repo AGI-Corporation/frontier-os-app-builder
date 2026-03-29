@@ -415,8 +415,18 @@ function cmdValidateStructure(cwd, flags) {
   const issues = [];
   const checks = [];
 
-  const requiredFiles = [
-    'src/lib/sdk-context.tsx',
+  // Determine verification tier from manifest sdkPhase
+  const manifest = loadManifest(cwd);
+  const sdkPhase = manifest && manifest.sdkPhase != null ? manifest.sdkPhase : null;
+  const currentPhase = flags.phase ? parseInt(flags.phase, 10) : null;
+  // Tier 2 only when sdkPhase is set AND current phase matches sdkPhase
+  const isTier2 = sdkPhase != null && currentPhase != null && currentPhase === sdkPhase;
+  // Backward compat: if no sdkPhase in manifest, run all checks (legacy SDK-first apps)
+  const isLegacy = sdkPhase == null;
+
+  // Tier 1 required files (always checked)
+  const tier1Files = [
+    'src/lib/frontier-services.tsx',
     'src/views/Layout.tsx',
     'src/main.tsx',
     'src/styles/index.css',
@@ -428,40 +438,71 @@ function cmdValidateStructure(cwd, flags) {
     'package.json'
   ];
 
+  // Tier 2 / legacy additional required files
+  const tier2Files = [
+    'src/lib/sdk-context.tsx',
+    'src/lib/sdk-services.tsx'
+  ];
+
+  // Legacy apps use sdk-context.tsx instead of frontier-services.tsx
+  const requiredFiles = isLegacy
+    ? ['src/lib/sdk-context.tsx', 'src/views/Layout.tsx', 'src/main.tsx', 'src/styles/index.css', 'vite.config.ts', 'tsconfig.json', 'postcss.config.js', 'vercel.json', 'index.html', 'package.json']
+    : isTier2
+      ? [...tier1Files, ...tier2Files]
+      : tier1Files;
+
   for (const file of requiredFiles) {
     const exists = fs.existsSync(path.join(cwd, file));
     checks.push({ file, exists });
     if (!exists) issues.push(`Missing required file: ${file}`);
   }
 
-  // Check vercel.json has all 3 CORS origins
-  const vercelPath = path.join(cwd, 'vercel.json');
-  if (fs.existsSync(vercelPath)) {
-    const vercel = readFile(vercelPath);
-    const origins = [
-      'http://localhost:5173',
-      'https://sandbox.os.frontiertower.io',
-      'https://os.frontiertower.io'
-    ];
-    for (const origin of origins) {
-      if (!vercel.includes(origin)) {
-        issues.push(`vercel.json missing CORS origin: ${origin}`);
+  // CORS origin checks — Tier 2 or legacy only
+  if (isLegacy || isTier2) {
+    const vercelPath = path.join(cwd, 'vercel.json');
+    if (fs.existsSync(vercelPath)) {
+      const vercel = readFile(vercelPath);
+      const origins = [
+        'http://localhost:5173',
+        'https://sandbox.os.frontiertower.io',
+        'https://os.frontiertower.io'
+      ];
+      for (const origin of origins) {
+        if (!vercel.includes(origin)) {
+          issues.push(`vercel.json missing CORS origin: ${origin}`);
+        }
       }
     }
   }
 
-  // Check Layout.tsx has iframe detection
-  const layoutPath = path.join(cwd, 'src/views/Layout.tsx');
-  if (fs.existsSync(layoutPath)) {
-    const layout = readFile(layoutPath);
-    if (!layout.includes('isInFrontierApp')) {
-      issues.push('Layout.tsx missing isInFrontierApp() check');
+  // Layout SDK checks — Tier 2 or legacy only
+  if (isLegacy || isTier2) {
+    const layoutPath = path.join(cwd, 'src/views/Layout.tsx');
+    if (fs.existsSync(layoutPath)) {
+      const layout = readFile(layoutPath);
+      if (!layout.includes('isInFrontierApp')) {
+        issues.push('Layout.tsx missing isInFrontierApp() check');
+      }
+      if (!layout.includes('createStandaloneHTML') && !layout.includes('renderStandaloneMessage')) {
+        issues.push('Layout.tsx missing standalone fallback');
+      }
+      if (!layout.includes('SdkProvider')) {
+        issues.push('Layout.tsx missing SdkProvider wrapping');
+      }
     }
-    if (!layout.includes('createStandaloneHTML') && !layout.includes('renderStandaloneMessage')) {
-      issues.push('Layout.tsx missing standalone fallback');
-    }
-    if (!layout.includes('SdkProvider')) {
-      issues.push('Layout.tsx missing SdkProvider wrapping');
+  }
+
+  // Mock layer checks — Tier 1 only (non-legacy apps)
+  if (!isLegacy) {
+    const servicesPath = path.join(cwd, 'src/lib/frontier-services.tsx');
+    if (fs.existsSync(servicesPath)) {
+      const services = readFile(servicesPath);
+      if (!services.includes('useServices')) {
+        issues.push('frontier-services.tsx missing useServices export');
+      }
+      if (!services.includes('createMockServices')) {
+        issues.push('frontier-services.tsx missing createMockServices export');
+      }
     }
   }
 
@@ -484,7 +525,8 @@ function cmdValidateStructure(cwd, flags) {
     pass: issues.length === 0,
     checks,
     issues,
-    checkedFiles: requiredFiles.length
+    checkedFiles: requiredFiles.length,
+    tier: isLegacy ? 'legacy' : isTier2 ? 2 : 1
   }, flags);
 }
 
@@ -493,9 +535,16 @@ function cmdValidatePermissions(cwd, flags) {
   if (!manifest) error('.frontier-app/manifest.json not found');
 
   const issues = [];
+  const warnings = [];
   const srcDir = path.join(cwd, 'src');
 
-  // Find all SDK method calls in source
+  // Determine tier
+  const sdkPhase = manifest.sdkPhase != null ? manifest.sdkPhase : null;
+  const currentPhase = flags.phase ? parseInt(flags.phase, 10) : null;
+  const isTier2 = sdkPhase != null && currentPhase != null && currentPhase === sdkPhase;
+  const isLegacy = sdkPhase == null;
+
+  // Find all SDK method calls in source (both patterns)
   const usedMethods = new Set();
   function scanDir(dir) {
     if (!fs.existsSync(dir)) return;
@@ -504,9 +553,21 @@ function cmdValidatePermissions(cwd, flags) {
         scanDir(path.join(dir, entry.name));
       } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
         const content = readFile(path.join(dir, entry.name));
-        // Match sdk.getX().methodName() or getX().methodName() patterns
-        const calls = content.match(/\.(getWallet|getUser|getStorage|getChain|getEvents|getCommunities|getPartnerships|getOffices|getThirdParty|getNavigation)\(\)\.\w+/g);
-        if (calls) calls.forEach(c => usedMethods.add(c.slice(1)));
+        // Match sdk.getX().methodName() or getX().methodName() patterns (legacy/SDK phase)
+        const sdkCalls = content.match(/\.(getWallet|getUser|getStorage|getChain|getEvents|getCommunities|getPartnerships|getOffices|getThirdParty|getNavigation)\(\)\.\w+/g);
+        if (sdkCalls) sdkCalls.forEach(c => usedMethods.add(c.slice(1)));
+        // Match services.module.methodName() patterns (standalone-first)
+        const svcCalls = content.match(/services\.(wallet|user|storage|chain|events|communities|partnerships|offices|thirdParty|navigation)\.\w+/g);
+        if (svcCalls) {
+          svcCalls.forEach(c => {
+            // Convert services.wallet.getBalance to getWallet().getBalance
+            const parts = c.replace('services.', '').split('.');
+            const moduleMap = { wallet: 'getWallet', user: 'getUser', storage: 'getStorage', chain: 'getChain', events: 'getEvents', communities: 'getCommunities', partnerships: 'getPartnerships', offices: 'getOffices', thirdParty: 'getThirdParty', navigation: 'getNavigation' };
+            if (moduleMap[parts[0]] && parts[1]) {
+              usedMethods.add(`${moduleMap[parts[0]]}().${parts[1]}`);
+            }
+          });
+        }
       }
     }
   }
@@ -534,7 +595,13 @@ function cmdValidatePermissions(cwd, flags) {
   }
 
   if (missingPerms.length > 0) {
-    issues.push(...missingPerms.map(m => `SDK method ${m.method} used but permission ${m.permission} not in manifest`));
+    if (isLegacy || isTier2) {
+      // Legacy or SDK Integration phase: missing permissions are errors
+      issues.push(...missingPerms.map(m => `SDK method ${m.method} used but permission ${m.permission} not in manifest`));
+    } else {
+      // Feature phases: missing permissions are warnings only
+      warnings.push(...missingPerms.map(m => `Service method ${m.method} used — permission ${m.permission} should be in manifest for SDK Integration`));
+    }
   }
 
   output({
@@ -542,7 +609,9 @@ function cmdValidatePermissions(cwd, flags) {
     declaredPermissions: manifest.permissions,
     usedMethods: Array.from(usedMethods),
     issues,
-    missingPermissions: missingPerms
+    warnings,
+    missingPermissions: missingPerms,
+    tier: isLegacy ? 'legacy' : isTier2 ? 2 : 1
   }, flags);
 }
 

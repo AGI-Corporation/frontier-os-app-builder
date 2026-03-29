@@ -34,7 +34,9 @@ app-<name>/
     main.tsx                 # React root + RouterProvider (identical pattern)
     router.tsx               # Route definitions (parameterized)
     lib/
-      sdk-context.tsx        # SdkProvider + useSdk hook (identical)
+      frontier-services.tsx  # useServices() provider + mock services (identical across all apps)
+      sdk-context.tsx        # SdkProvider + useSdk hook (added during SDK Integration phase)
+      sdk-services.tsx       # SDK adapter mapping services to real SDK (added during SDK Integration phase)
     views/
       Layout.tsx             # Shell layout component (parameterized)
       <FeatureViews>.tsx     # App-specific view components
@@ -65,7 +67,11 @@ app-<name>/
 
 These files are copied verbatim. They must not be modified per app.
 
-### `src/lib/sdk-context.tsx`
+### `src/lib/frontier-services.tsx`
+
+This file provides the `useServices()` hook and `FrontierServicesProvider`. It is identical across all apps. During standalone development it returns mock services; after SDK Integration it detects the environment and returns either mocks or real SDK-backed services.
+
+### `src/lib/sdk-context.tsx` — identical across all apps, created during SDK Integration phase (not at scaffold time)
 
 ```tsx
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -102,6 +108,10 @@ export const SdkProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 ```
+
+### `src/lib/sdk-services.tsx` — identical across all apps, created during SDK Integration phase (not at scaffold time)
+
+This file provides the adapter that maps the `FrontierServices` interface to real SDK calls. It is created during the SDK Integration phase.
 
 ### `postcss.config.js`
 
@@ -320,6 +330,68 @@ The `isInFrontierApp()` function checks `window.self !== window.top` -- it retur
 
 The `createStandaloneHTML()` fallback renders a branded page telling the user to open the app inside Frontier Wallet.
 
+#### Standalone-First Layout (Phase 1 through feature phases)
+
+```typescript
+import { Outlet } from 'react-router-dom';
+import { FrontierServicesProvider } from '../lib/frontier-services';
+
+export const Layout = () => (
+  <FrontierServicesProvider>
+    <Outlet />
+  </FrontierServicesProvider>
+);
+```
+
+No iframe detection, no loading state, no standalone fallback. The app just renders with mock services.
+
+#### SDK-Aware Layout (after SDK Integration phase)
+
+The existing Layout pattern with `isInFrontierApp()`, `createStandaloneHTML()`, and `SdkProvider` wrapping is applied during the SDK Integration phase. See the current Layout Pattern above.
+
+---
+
+### Services Pattern (Standalone-First)
+
+New apps use the `useServices()` abstraction instead of `useSdk()` directly. This enables standalone development with mock data before the SDK is wired in.
+
+**Standard hook using services:**
+
+```typescript
+import { useState, useEffect } from 'react';
+import { useServices } from '../lib/frontier-services';
+import type { WalletBalanceFormatted } from '../lib/frontier-services';
+
+export function useBalance() {
+  const services = useServices();
+  const [balance, setBalance] = useState<WalletBalanceFormatted | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const result = await services.wallet.getBalanceFormatted();
+        setBalance(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load balance');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [services]);
+
+  return { balance, loading, error };
+}
+```
+
+**Key differences from SDK pattern:**
+- Import `useServices` from `../lib/frontier-services` (not `useSdk` from `../lib/sdk-context`)
+- Access modules as properties: `services.wallet` (not `sdk.getWallet()`)
+- Types imported from `../lib/frontier-services` (not `@frontiertower/frontier-sdk`)
+- Works standalone with mock data — no iframe required during development
+
 ---
 
 ## Router Variant (Standard)
@@ -499,3 +571,20 @@ Configured in `vite.config.ts`:
 
 - `"types": ["vitest/globals", "@testing-library/jest-dom"]` -- global type augmentation
 - `"exclude": ["src/test", "**/*.test.ts", "**/*.test.tsx"]` -- test files excluded from production type-check (`tsc --noEmit` / `tsc && vite build`)
+
+---
+
+### SDK Integration Pattern
+
+The final phase of every app wires the real Frontier SDK in. This is a mechanical step:
+
+1. **Add SDK dependency**: `npm install @frontiertower/frontier-sdk`
+2. **Create `src/lib/sdk-context.tsx`**: Standard SdkProvider + useSdk hook (from template)
+3. **Create `src/lib/sdk-services.tsx`**: Adapter mapping FrontierServices interface to real SDK calls
+4. **Upgrade `src/lib/frontier-services.tsx`**: Add environment detection — iframe uses SDK adapter, standalone uses mocks
+5. **Upgrade `src/views/Layout.tsx`**: Add `isInFrontierApp()` detection, standalone fallback, `SdkProvider` wrapping
+6. **Add CORS origins to `vercel.json`**: All 3 Frontier OS origins
+
+After SDK Integration, the app works in both modes:
+- **Standalone** (browser): Uses mock services, shows development data
+- **Iframe** (Frontier PWA): Uses real SDK, shows live data

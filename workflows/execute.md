@@ -325,6 +325,10 @@ Task(
     Check all success criteria from ROADMAP.md are met.
     Check all SUMMARY.md files for issues.
     Run structural and permission validation.
+
+    Read sdkPhase from manifest.json. If current phase matches sdkPhase, run BOTH
+    Tier 1 (standalone app quality) and Tier 2 (SDK integration correctness) checks.
+    Otherwise, run Tier 1 checks only.
     </objective>
 
     <files_to_read>
@@ -413,11 +417,20 @@ Use AskUserQuestion:
 node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update status "phase-complete"
 node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update phase "$PHASE"
 
+# Read sdkPhase from manifest
+SDK_PHASE=$(node -e "const m=JSON.parse(require('fs').readFileSync('.frontier-app/manifest.json','utf8')); console.log(m.sdkPhase || -1)")
+
 # Set next action based on whether more phases remain
 if [ "$PHASE" -lt "$TOTAL_PHASES" ]; then
   NEXT_PHASE=$((PHASE + 1))
-  node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update next_action "/fos:discuss $NEXT_PHASE"
-  node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update status "ready-to-discuss"
+  if [ "$NEXT_PHASE" -eq "$SDK_PHASE" ]; then
+    # SDK Integration phase is mechanical — skip discuss, go straight to plan
+    node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update next_action "/fos:plan $NEXT_PHASE"
+    node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update status "ready-to-plan"
+  else
+    node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update next_action "/fos:discuss $NEXT_PHASE"
+    node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update status "ready-to-discuss"
+  fi
 else
   node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update next_action "/fos:ship"
   node "$HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs" state update status "milestone-complete"
@@ -457,7 +470,23 @@ Plans completed:
 - [Plan 01]: [one-liner from SUMMARY.md]
 - [Plan 02]: [one-liner from SUMMARY.md]
 
-[If more phases remain:]
+[If completed phase was the SDK Integration phase (sdkPhase from manifest.json):]
+────────────────────────────────────────
+SDK Integration complete. App is now Frontier OS-ready.
+Next up: `/fos:ship` — Deploy to Vercel and register in the Frontier app store.
+
+Run `/clear` first to free your context window.
+────────────────────────────────────────
+
+[If more phases remain AND next phase is sdkPhase:]
+────────────────────────────────────────
+Next up: `/fos:plan [N+1]`
+  Plan Phase [N+1]: [Name] — SDK Integration is mechanical, skipping discuss.
+
+Run `/clear` first to free your context window.
+────────────────────────────────────────
+
+[If more phases remain (default):]
 ────────────────────────────────────────
 Next up: `/fos:discuss [N+1]`
   Discuss Phase [N+1]: [Name] — capture implementation decisions before planning.

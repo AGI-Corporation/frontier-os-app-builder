@@ -65,7 +65,7 @@ Create or append to `.frontier-app/MILESTONES.md`:
 
 | Phase | Name | Plans | Status |
 |-------|------|-------|--------|
-| 1 | Scaffold + SDK Core | 1/1 | Complete |
+| 1 | Scaffold + Standalone Shell | 1/1 | Complete |
 | 2 | [Name] | N/N | Complete |
 | ... | ... | ... | ... |
 

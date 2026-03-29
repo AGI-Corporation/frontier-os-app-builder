@@ -4,6 +4,19 @@ Defines what the fos-verifier agent must check after generating or modifying a F
 
 ---
 
+## Verification Tiers
+
+Rules are split into two tiers based on when they apply:
+
+| Tier | Rules | When to Run |
+|------|-------|-------------|
+| **Tier 1 (Design)** | S-01–S-03, T-01–T-05, B-01–B-03, C-02–C-04, M-01–M-03 | After every phase |
+| **Tier 2 (SDK)** | I-01–I-04, C-01, C-05, P-01–P-03 | After SDK Integration phase only |
+
+To determine the current tier: read `sdkPhase` from `.frontier-app/manifest.json`. If the current phase matches `sdkPhase`, run both Tier 1 and Tier 2. Otherwise, run Tier 1 only. If `sdkPhase` is absent from the manifest, run all checks (backward compatibility).
+
+---
+
 ## Structure Checks
 
 These verify the generated file tree matches the standard Frontier OS app layout.
@@ -20,7 +33,7 @@ tsconfig.json
 vercel.json
 vite.config.ts
 src/main.tsx
-src/lib/sdk-context.tsx
+src/lib/frontier-services.tsx
 src/views/Layout.tsx
 src/styles/index.css
 ```
@@ -81,6 +94,8 @@ README.md
 ---
 
 ## SDK Integration Checks
+
+> **Tier 2 — SDK Integration phase only.** Skip these checks for all other phases.
 
 These verify the app correctly integrates with the Frontier SDK.
 
@@ -143,6 +158,8 @@ These verify configuration files have the correct content.
 
 ### C-01: vercel.json has all 3 CORS origin blocks
 
+> **Tier 2 — SDK Integration phase only.**
+
 The `vercel.json` file must contain exactly 3 header blocks, one for each allowed origin:
 
 1. `https://os.frontiertower.io`
@@ -201,12 +218,12 @@ The `test` script may be omitted if the app has no tests and vitest is not in de
 
 **Pass condition:** All listed scripts are present with exact command values. If vitest is in devDependencies, the `test` script must be present.
 
-### C-05: package.json has required dependencies
+### C-05a: package.json has required dependencies (Tier 1)
 
 The following must be in `dependencies`:
-- `@frontiertower/frontier-sdk`
 - `react`
 - `react-dom`
+- `react-router-dom` (when the app uses routing)
 
 The following must be in `devDependencies`:
 - `@tailwindcss/postcss`
@@ -217,22 +234,31 @@ The following must be in `devDependencies`:
 - `tailwindcss`
 - `typescript`
 - `vite`
+- `vitest`
 
-When the app uses routing, `react-router-dom` must be in `dependencies`.
-
-When the app has tests, the following must be in `devDependencies`:
+When the app has tests, the following must also be in `devDependencies`:
 - `@testing-library/jest-dom`
 - `@testing-library/react`
 - `@testing-library/user-event`
 - `@vitest/coverage-v8`
 - `jsdom`
-- `vitest`
 
 **Pass condition:** All listed packages are present in the correct section.
+
+### C-05b: package.json has SDK dependency (Tier 2)
+
+> **Tier 2 — SDK Integration phase only.**
+
+The following must be in `dependencies`:
+- `@frontiertower/frontier-sdk`
+
+**Pass condition:** `@frontiertower/frontier-sdk` is present in `dependencies`.
 
 ---
 
 ## Permission Checks
+
+> **Tier 2 — SDK Integration phase only.** Permission checks only apply after the SDK is wired in.
 
 These verify that declared permissions match actual SDK usage.
 
@@ -374,30 +400,66 @@ The `@layer base` block must include:
 
 ---
 
+## Mock Layer Checks
+
+> **Tier 1 — Run after every phase** (except Phase 1 scaffold-only verification).
+
+### M-01: frontier-services.tsx exports useServices
+
+`src/lib/frontier-services.tsx` must exist and export a `useServices` function.
+
+**Pass condition:** `grep -q "export.*useServices" src/lib/frontier-services.tsx`
+
+**Severity:** Error
+
+### M-02: createMockServices exported
+
+`src/lib/frontier-services.tsx` must export `createMockServices`.
+
+**Pass condition:** `grep -q "export.*createMockServices" src/lib/frontier-services.tsx`
+
+**Severity:** Error
+
+### M-03: No direct SDK imports in feature code
+
+Source files under `src/hooks/`, `src/views/`, and `src/components/` must NOT import from `@frontiertower/frontier-sdk` or `../lib/sdk-context`. Feature code should use `useServices()` from `../lib/frontier-services`.
+
+**Pass condition:** No matches for `from.*@frontiertower/frontier-sdk` or `from.*sdk-context` in `src/hooks/`, `src/views/`, `src/components/` (excluding `src/lib/`).
+
+**Severity:** Error — indicates feature code bypassing the services abstraction
+
+**Note:** This check does NOT apply during the SDK Integration phase, where `sdk-context.tsx` and `sdk-services.tsx` legitimately import from the SDK.
+
+---
+
 ## Summary Checklist
 
-| ID   | Category      | Rule                                                | Severity |
-| ---- | ------------- | --------------------------------------------------- | -------- |
-| S-01 | Structure     | Required files exist                                | Error    |
-| S-02 | Structure     | Directory structure matches pattern                 | Error    |
-| S-03 | Structure     | No extraneous top-level files                       | Warning  |
-| I-01 | SDK           | isInFrontierApp() call in Layout.tsx                | Error    |
-| I-02 | SDK           | createStandaloneHTML() fallback in Layout.tsx        | Error    |
-| I-03 | SDK           | SdkProvider wrapping children in Layout.tsx          | Error    |
-| I-04 | SDK           | useSdk() hook available and used                    | Error    |
-| C-01 | Configuration | vercel.json has all 3 CORS origin blocks            | Error    |
-| C-02 | Configuration | tsconfig.json has strict mode and vitest types      | Error    |
-| C-03 | Configuration | postcss.config.js imports @tailwindcss/postcss      | Error    |
-| C-04 | Configuration | package.json has correct scripts                    | Error    |
-| C-05 | Configuration | package.json has required dependencies              | Error    |
-| P-01 | Permissions   | Manifest permissions match SDK method calls         | Error    |
-| P-02 | Permissions   | No SDK methods called without permission            | Error    |
-| P-03 | Permissions   | No unnecessary permissions declared                 | Warning  |
-| B-01 | Build         | tsc --noEmit passes                                 | Error    |
-| B-02 | Build         | vite build succeeds                                 | Error    |
-| B-03 | Build         | vitest run passes (if tests exist)                  | Error    |
-| T-01 | Theme         | Dark theme CSS variables defined in index.css       | Error    |
-| T-02 | Theme         | body class="dark" in index.html                     | Error    |
-| T-03 | Theme         | Plus Jakarta Sans font loaded                       | Error    |
-| T-04 | Theme         | @import "tailwindcss" in index.css                  | Error    |
-| T-05 | Theme         | Base layer styles present                           | Error    |
+| ID    | Category      | Rule                                                | Tier   | Severity |
+| ----- | ------------- | --------------------------------------------------- | ------ | -------- |
+| S-01  | Structure     | Required files exist                                | Tier 1 | Error    |
+| S-02  | Structure     | Directory structure matches pattern                 | Tier 1 | Error    |
+| S-03  | Structure     | No extraneous top-level files                       | Tier 1 | Warning  |
+| I-01  | SDK           | isInFrontierApp() call in Layout.tsx                | Tier 2 | Error    |
+| I-02  | SDK           | createStandaloneHTML() fallback in Layout.tsx        | Tier 2 | Error    |
+| I-03  | SDK           | SdkProvider wrapping children in Layout.tsx          | Tier 2 | Error    |
+| I-04  | SDK           | useSdk() hook available and used                    | Tier 2 | Error    |
+| C-01  | Configuration | vercel.json has all 3 CORS origin blocks            | Tier 2 | Error    |
+| C-02  | Configuration | tsconfig.json has strict mode and vitest types      | Tier 1 | Error    |
+| C-03  | Configuration | postcss.config.js imports @tailwindcss/postcss      | Tier 1 | Error    |
+| C-04  | Configuration | package.json has correct scripts                    | Tier 1 | Error    |
+| C-05a | Configuration | package.json has required dependencies              | Tier 1 | Error    |
+| C-05b | Configuration | package.json has SDK dependency                     | Tier 2 | Error    |
+| M-01  | Mock Layer    | frontier-services.tsx exports useServices            | Tier 1 | Error    |
+| M-02  | Mock Layer    | createMockServices exported                         | Tier 1 | Error    |
+| M-03  | Mock Layer    | No direct SDK imports in feature code               | Tier 1 | Error    |
+| P-01  | Permissions   | Manifest permissions match SDK method calls         | Tier 2 | Error    |
+| P-02  | Permissions   | No SDK methods called without permission            | Tier 2 | Error    |
+| P-03  | Permissions   | No unnecessary permissions declared                 | Tier 2 | Warning  |
+| B-01  | Build         | tsc --noEmit passes                                 | Tier 1 | Error    |
+| B-02  | Build         | vite build succeeds                                 | Tier 1 | Error    |
+| B-03  | Build         | vitest run passes (if tests exist)                  | Tier 1 | Error    |
+| T-01  | Theme         | Dark theme CSS variables defined in index.css       | Tier 1 | Error    |
+| T-02  | Theme         | body class="dark" in index.html                     | Tier 1 | Error    |
+| T-03  | Theme         | Plus Jakarta Sans font loaded                       | Tier 1 | Error    |
+| T-04  | Theme         | @import "tailwindcss" in index.css                  | Tier 1 | Error    |
+| T-05  | Theme         | Base layer styles present                           | Tier 1 | Error    |

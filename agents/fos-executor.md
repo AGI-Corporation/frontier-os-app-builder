@@ -27,7 +27,26 @@ Before executing, discover project context:
 
 <execution_flow>
 
-<step name="load_project_state" priority="first">
+<step name="verify_cwd" priority="first">
+**CRITICAL — Verify working directory before anything else.**
+
+When spawned in a worktree, your CWD may be the worktree root, not the app directory. Check:
+
+```bash
+ls .frontier-app/manifest.json 2>/dev/null && echo "CWD OK" || echo "CWD WRONG"
+```
+
+If `CWD WRONG`: look for the app directory inside the current directory. The worktree contains a copy of the repo — `cd` into it:
+```bash
+# Find the app directory (has .frontier-app/)
+APP_DIR=$(find . -maxdepth 2 -name "manifest.json" -path "*/.frontier-app/*" -exec dirname {} \; | head -1 | sed 's|/.frontier-app||')
+cd "$APP_DIR"
+```
+
+**All subsequent commands and file paths must be relative to the app root (where `.frontier-app/` exists).** Never use absolute worktree paths in git add commands — use paths relative to the repo root (e.g., `git add .frontier-app/phases/01-scaffold/01-01-SUMMARY.md`, NOT `git add frontier-os-app-name/.frontier-app/...`).
+</step>
+
+<step name="load_project_state">
 Load execution context:
 
 1. Read `.frontier-app/PROJECT.md` — app name, description, SDK modules
@@ -102,25 +121,25 @@ node $HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs scaffold <template>
 | Template | Destination |
 |----------|-------------|
 | `index.html` | `./index.html` |
-| `package.json` | `./package.json` |
+| `package-standalone.json` | `./package.json` |
 | `postcss.config.js` | `./postcss.config.js` |
 | `tsconfig.json` | `./tsconfig.json` |
-| `vercel.json` | `./vercel.json` |
+| `vercel-standalone.json` | `./vercel.json` |
 | `vite.config.ts` | `./vite.config.ts` |
-| `sdk-context.tsx` | `./src/lib/sdk-context.tsx` |
-| `layout.tsx` | `./src/views/Layout.tsx` |
-| `main-router.tsx` or `main-simple.tsx` | `./src/main.tsx` |
+| `frontier-services.tsx` | `./src/lib/frontier-services.tsx` |
+| `layout-standalone.tsx` | `./src/views/Layout.tsx` |
+| `main-router.tsx` or `main-simple-standalone.tsx` | `./src/main.tsx` |
 | `router.tsx` | `./src/router.tsx` |
 | `index.css` | `./src/styles/index.css` |
 | `test-setup.ts` | `./src/test/setup.ts` |
 | `gitignore` | `./.gitignore` |
 
 **Critical scaffold requirements:**
-- `src/lib/sdk-context.tsx` — NEVER modify after scaffold. Identical across all apps.
-- `src/views/Layout.tsx` — Must include `isInFrontierApp()` detection, `createStandaloneHTML()` fallback, `SdkProvider` wrapping children
+- `src/lib/frontier-services.tsx` — Exports `useServices()` with mock backend. Modified only during SDK Integration phase.
+- `src/views/Layout.tsx` — Dark-themed shell wrapping Outlet with FrontierServicesProvider. SdkProvider added during SDK Integration phase.
 - `src/styles/index.css` — Must include `@import "tailwindcss"`, complete `@theme` block with ALL CSS variables, `@layer base` with body styles
 - `index.html` — Must have `<body class="dark">`, Plus Jakarta Sans font links
-- `vercel.json` — Must have all 3 CORS origin blocks + SPA rewrite
+- `vercel.json` — SPA rewrite only at scaffold time. CORS origins added during SDK Integration phase.
 - `package.json` — Must have correct scripts (dev, build, preview, lint, test) and all required dependencies
 
 </scaffold_execution>
@@ -131,29 +150,29 @@ node $HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs scaffold <template>
 
 For feature tasks (Phase 2+), write actual TypeScript/React code.
 
-### SDK Code Patterns
+### Services Code Patterns
 
 **Always use these exact patterns:**
 
-**Import SDK:**
+**Import services:**
 ```typescript
-import { useSdk } from '../lib/sdk-context';
+import { useServices } from '../lib/frontier-services';
 ```
 
 **Access module:**
 ```typescript
-const sdk = useSdk();
-const wallet = sdk.getWallet();
+const services = useServices();
+const wallet = services.wallet;
 ```
 
 **Create hooks with loading/error states:**
 ```typescript
 import { useState, useEffect } from 'react';
-import { useSdk } from '../lib/sdk-context';
+import { useServices } from '../lib/frontier-services';
 import type { ReturnType } from '@frontiertower/frontier-sdk';
 
 export function useFeature() {
-  const sdk = useSdk();
+  const services = useServices();
   const [data, setData] = useState<ReturnType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +180,7 @@ export function useFeature() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await sdk.getModule().method();
+        const result = await services.module.method();
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -170,7 +189,7 @@ export function useFeature() {
       }
     };
     fetchData();
-  }, [sdk]);
+  }, [services]);
 
   return { data, loading, error };
 }
@@ -224,7 +243,82 @@ Always use these semantic classes (defined in index.css @theme block):
 - If a type is not exported by the SDK, define a local interface that matches the SDK's return shape
 - Always use `strict: true` TypeScript
 
+### Module Access Reference
+
+When accessing modules via `useServices()`, use these property names:
+
+| Service Property | Description |
+|-----------------|-------------|
+| `services.wallet` | Wallet operations (balance, transactions, send) |
+| `services.storage` | Storage operations (get, set, delete) |
+| `services.chain` | Chain/blockchain operations |
+| `services.user` | User profile and authentication |
+| `services.partnerships` | Partnerships module |
+| `services.thirdParty` | Third-party integrations |
+| `services.communities` | Communities module |
+| `services.events` | Events module |
+| `services.offices` | Offices module |
+| `services.navigation` | Navigation module |
+
 </feature_execution>
+
+<frontier_os_rules>
+**CRITICAL — These rules apply to ALL code written for Frontier OS apps.**
+
+**Read the current phase and sdkPhase from manifest.json to determine which tier applies.**
+
+**TIER 1 — ALL PHASES:**
+1. **Dark theme:** Tailwind dark theme. Backgrounds: `bg-background`, `bg-card`, `bg-muted-background`. Text: `text-foreground`, `text-card-foreground`, `text-muted-foreground`. No hardcoded colors (no bg-white, text-black, bg-gray-900).
+2. **Error handling:** All service calls wrapped in try/catch. Loading states for async operations. Error states with user-friendly messages.
+3. **TypeScript strict:** All code in TypeScript strict mode. No `any` types unless explicitly justified.
+4. **Testing:** Vitest for unit tests. Test files in `src/test/`.
+5. **Service access:** Feature phases use `useServices()` from `src/lib/frontier-services.tsx`. Never import SDK directly in feature hooks or views.
+6. **Mock layer:** Mock services return realistic data matching SDK return types. Hooks must work identically whether backed by mocks or real SDK.
+
+**TIER 2 — SDK INTEGRATION PHASE ONLY:**
+7. **SDK access:** `useSdk()` hook from `src/lib/sdk-context.tsx`, used only inside `sdk-services.tsx` and `Layout.tsx`.
+8. **Iframe detection:** `isInFrontierApp()` check in Layout.tsx. Standalone mode shows fallback banner.
+9. **SdkProvider wrapping:** App wrapped in SdkProvider when inside iframe. SDK initialized once via useRef, destroyed on unmount.
+10. **Permissions:** Every SDK method used must have permission declared in manifest.json.
+11. **CORS:** vercel.json must include all 3 Frontier OS origins (os.frontiertower.io, sandbox.os.frontiertower.io, localhost:5173).
+12. **SDK imports:** Use `@frontiertower/frontier-sdk` for SDK classes. Exact import paths, not barrel imports.
+</frontier_os_rules>
+
+<sdk_integration_execution>
+
+### SDK Integration Phase Execution
+
+For the SDK Integration phase (always the final phase), perform these mechanical operations:
+
+**Step 1: Add SDK dependency**
+```bash
+npm install @frontiertower/frontier-sdk
+```
+
+**Step 2: Create sdk-context.tsx**
+Render from `templates/app/sdk-context.tsx` to `src/lib/sdk-context.tsx`.
+This file is IDENTICAL across all apps — never customize it.
+
+**Step 3: Create sdk-services.tsx**
+Render from `templates/app/sdk-services.tsx` to `src/lib/sdk-services.tsx`.
+This adapter maps each `FrontierServices` method to the corresponding `sdk.getModule().method()` call.
+
+**Step 4: Upgrade frontier-services.tsx**
+Modify `src/lib/frontier-services.tsx` to add environment detection:
+- Import `isInFrontierApp` from `@frontiertower/frontier-sdk/ui-utils`
+- If in iframe: import and use `createSdkServices` from `./sdk-services`
+- If standalone: use existing `createMockServices()` (no change to mock code)
+
+**Step 5: Upgrade Layout.tsx**
+Follow standard Layout pattern from `templates/app/layout.tsx`:
+- Add `isInFrontierApp()` detection
+- Add `createStandaloneHTML()` fallback for standalone mode
+- Wrap children in `SdkProvider` when in iframe
+
+**Step 6: Add CORS origins to vercel.json**
+Replace vercel.json with full version from `templates/app/vercel.json` (has all 3 CORS origin blocks plus SPA rewrite).
+
+</sdk_integration_execution>
 
 <deviation_rules>
 **While executing, you WILL discover work not in the plan.** Apply these rules automatically. Track all deviations for Summary.
@@ -239,7 +333,7 @@ No user permission needed for Rules 1-3.
 
 **Trigger:** Code doesn't work as intended (broken behavior, errors, incorrect output)
 
-**Examples:** Wrong SDK method call, type errors, null pointer exceptions, broken imports, incorrect hook dependencies, missing await on SDK promises
+**Examples:** Wrong service method call, type errors, null pointer exceptions, broken imports, incorrect hook dependencies, missing await on service promises
 
 ---
 
@@ -247,7 +341,7 @@ No user permission needed for Rules 1-3.
 
 **Trigger:** Code missing essential features for correctness, security, or basic operation
 
-**Examples:** Missing error handling on SDK calls, no loading states, missing null checks on SDK responses, no standalone fallback in Layout, missing CORS headers in vercel.json, no dark theme on new components
+**Examples:** Missing error handling on service calls, no loading states, missing null checks on service responses, no dark theme on new components
 
 ---
 
@@ -255,7 +349,7 @@ No user permission needed for Rules 1-3.
 
 **Trigger:** Something prevents completing current task
 
-**Examples:** Missing dependency, wrong import path, build error, TypeScript error, missing SDK type export, Vite config issue
+**Examples:** Missing dependency, wrong import path, build error, TypeScript error, missing type export, Vite config issue
 
 ---
 
@@ -263,7 +357,7 @@ No user permission needed for Rules 1-3.
 
 **Trigger:** Fix requires significant structural modification
 
-**Examples:** Changing SDK module approach, switching from single view to router, changing state management strategy, adding a new SDK module not in manifest
+**Examples:** Changing service module approach, switching from single view to router, changing state management strategy, adding a new service module not in manifest
 
 **Action:** STOP --> return checkpoint with: what found, proposed change, why needed, impact, alternatives. **User decision required.**
 
@@ -400,11 +494,11 @@ tasks_completed: N/N
 
 - [Decision and rationale]
 
-## SDK Methods Used
+## Service Methods Used
 
 | Method | Module | Permission | Files |
 |--------|--------|------------|-------|
-| getBalanceFormatted() | Wallet | wallet:getBalanceFormatted | src/hooks/useBalance.ts |
+| wallet.getBalanceFormatted() | Wallet | wallet:getBalanceFormatted | src/hooks/useBalance.ts |
 
 ## Deviations from Plan
 

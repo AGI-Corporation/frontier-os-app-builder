@@ -148,9 +148,10 @@ Incorporate answers from smart questions to refine the module list. If the user'
 
 ### Phases Preview
 
-1. **Phase 1: Scaffold + SDK Core** — Project setup, SdkProvider, iframe detection, dark theme
+1. **Phase 1: Scaffold + Standalone Shell** — Project setup, services layer, mock data, dark theme
 2. **Phase 2: [Feature]** — [From description + smart question answers]
-3. **Phase N: [Feature]** — [From description + smart question answers]
+...
+N. **Phase N: SDK Integration** — Wire SDK, create adapter, upgrade Layout for iframe
 
 Total permissions: [N]
 ```
@@ -183,13 +184,15 @@ This creates:
 <step name="create_roadmap">
 **Build the phased roadmap.**
 
-Phase 1 is ALWAYS "Scaffold + SDK Core" — this is non-negotiable for every Frontier OS app.
+Phase 1 is ALWAYS "Scaffold + Standalone Shell" — this is non-negotiable for every Frontier OS app.
+The LAST phase is ALWAYS "SDK Integration" — a mechanical phase that wires the real Frontier SDK. This phase is auto-added and has fixed success criteria (no user decisions needed). It is non-negotiable.
 
 Additional phases come from the features identified in steps 3-5:
 - Group related features into coherent phases
 - Each phase should deliver something testable
 - Keep to 3-6 total phases for v1 — ship fast
 - Order phases by dependency (features that build on each other)
+- The final phase is always "SDK Integration" — auto-added after all feature phases
 
 **Phase sizing heuristics:**
 - Simple feature (one SDK module, one view): 1 phase, 1-2 plans
@@ -260,10 +263,12 @@ Construct the manifest object:
   "permissions": ["storage:get", "storage:set", ...all permissions...],
   "milestone": "v1",
   "phases": [
-    {"number": 1, "name": "Scaffold + SDK Core", "status": "not-started"},
+    {"number": 1, "name": "Scaffold + Standalone Shell", "status": "not-started"},
     {"number": 2, "name": "[Feature]", "status": "not-started"},
     ...
-  ]
+    {"number": N, "name": "SDK Integration", "status": "not-started"}
+  ],
+  "sdkPhase": N
 }
 ```
 

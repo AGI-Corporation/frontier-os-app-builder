@@ -74,6 +74,8 @@ Then verify each level against the actual plan files.
 3. Check method signatures match (parameter types, return types)
 4. Verify the correct module accessor is used (e.g., `getWallet()` not `wallet()`)
 
+Feature phases access methods via `services.module.method()` (not `sdk.getModule().method()`). The method NAMES are the same — validate against sdk-surface.md for correctness. The import path should be `../lib/frontier-services`, not `../lib/sdk-context`.
+
 **Validation rules:**
 - Method must exist in @frontier-os-app-builder/references/sdk-surface.md
 - Module accessor must use the correct getter: `sdk.getWallet()`, `sdk.getStorage()`, etc.
@@ -100,6 +102,8 @@ issue:
 ## Dimension 2: Permission Alignment
 
 **Question:** Do SDK methods used in plans have corresponding permissions in manifest.json?
+
+For feature phases: permission mismatches are severity **warning** (permissions are enforced at SDK Integration). For SDK Integration phase: permission mismatches are severity **blocker** (permissions must match real SDK calls).
 
 **Process:**
 1. Extract all SDK method calls from plan tasks
@@ -147,13 +151,14 @@ issue:
    - Files outside `src/` that should be inside
    - Wrong casing (lowercase views, PascalCase hooks)
    - Tests not in `src/test/`
-   - SDK-context.tsx modification (it must be identical across apps)
+   - Feature phase tasks importing from `sdk-context` instead of `frontier-services`
 
 **Red flags:**
 - `src/components/layout.tsx` (wrong case — should be `Layout.tsx`)
 - `src/useBalance.ts` (wrong location — should be `src/hooks/useBalance.ts`)
 - `tests/` at root (wrong — should be `src/test/`)
-- Any task modifying `src/lib/sdk-context.tsx`
+- Feature phase task importing from `src/lib/sdk-context` (should be `src/lib/frontier-services`)
+- Any task modifying `src/lib/sdk-context.tsx` (only created during SDK Integration phase)
 
 **Example issue:**
 ```yaml
@@ -176,20 +181,19 @@ issue:
    - `package.json` (correct scripts, dependencies)
    - `postcss.config.js` (imports @tailwindcss/postcss)
    - `tsconfig.json` (strict mode, correct types)
-   - `vercel.json` (all 3 CORS origins)
+   - `vercel.json`
    - `vite.config.ts`
    - `src/main.tsx`
-   - `src/lib/sdk-context.tsx`
-   - `src/views/Layout.tsx` (with isInFrontierApp, createStandaloneHTML, SdkProvider)
+   - `src/lib/frontier-services.tsx` (with `useServices()` export and `createMockServices()` export)
+   - `src/views/Layout.tsx` (with `FrontierServicesProvider`)
    - `src/styles/index.css` (Tailwind import, @theme block with all CSS variables, @layer base)
    - `.gitignore`
 2. Check that task actions mention key requirements:
-   - iframe detection via `isInFrontierApp()`
-   - Standalone fallback via `createStandaloneHTML()`
-   - SdkProvider wrapping children
+   - `useServices()` export in frontier-services.tsx
+   - `createMockServices()` export in frontier-services.tsx
+   - `FrontierServicesProvider` wrapping children in Layout
    - Dark theme CSS variables (all variables from T-01)
    - Plus Jakarta Sans font loading (T-03)
-   - 3 CORS origins in vercel.json (C-01)
    - Correct package.json scripts: dev, build, preview, lint, test (C-04)
 
 **Example issue:**
@@ -244,12 +248,13 @@ issue:
 
 **Frontier OS specific wiring patterns:**
 ```
-Hook --> Component: Does a view import and call the hook?
-Component --> SdkProvider: Is the view rendered inside SdkProvider?
-SDK call --> Error handling: Does the action mention try/catch?
-Router --> View: Does the router import the view component?
-Layout --> SdkProvider: Does Layout wrap children with SdkProvider?
+Hook --> Component: Does view import and call hook?
+Hook --> Services: Does hook import useServices() from frontier-services?
+Service call --> Error handling: Does action mention try/catch?
+Router --> View: Does router import view component?
 ```
+
+Note: SdkProvider wiring is checked only for SDK Integration phase plans.
 
 **Red flags:**
 - Hook created but no view imports it
@@ -329,6 +334,23 @@ issue:
 - Test files in wrong location
 - Test task with vague action ("write tests") instead of specific test cases
 
+## Dimension 10: SDK Integration Phase Completeness
+
+**Applies to:** SDK Integration phase plans only. Skip for feature phase plans.
+
+**Question:** Does the plan cover all mechanical steps for SDK Integration?
+
+**Checklist:**
+1. Plan includes task to add `@frontiertower/frontier-sdk` dependency (`npm install`)
+2. Plan includes task to create `src/lib/sdk-context.tsx` from template
+3. Plan includes task to create `src/lib/sdk-services.tsx` adapter
+4. Plan includes task to upgrade `src/lib/frontier-services.tsx` with environment detection
+5. Plan includes task to upgrade `src/views/Layout.tsx` with iframe detection + SdkProvider
+6. Plan includes task to add CORS origins to `vercel.json`
+7. Plan includes verification task (build, typecheck, full validation)
+
+**Severity:** blocker for any missing step — SDK Integration is standardized and every step is required.
+
 </verification_dimensions>
 
 <output_format>
@@ -357,6 +379,7 @@ Return structured PASS/FAIL with issues list:
 | 7 | Context Compliance | PASS/FAIL/N/A | [count] |
 | 8 | Scope Sanity | PASS/FAIL | [count] |
 | 9 | Test Coverage | PASS/FAIL | [count] |
+| 10 | SDK Integration Completeness | PASS/FAIL/N/A | [count] |
 
 ### Issues
 

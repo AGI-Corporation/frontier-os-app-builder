@@ -93,6 +93,8 @@ All production apps live at `~/frontieros/frontier-os-app-*`. Use this mapping t
 - `getLinkedBanks()` list display
 - KYC gate handling
 
+**Note:** Production apps at `~/frontieros/frontier-os-app-*` currently use `useSdk()` directly. New apps use the `useServices()` abstraction from `src/lib/frontier-services.tsx`. When researching production apps, document method signatures, return types, and error handling patterns — these inform the services layer. The planner will map these to the `useServices()` pattern.
+
 ### Storage / State Persistence
 **All apps use storage.** Study any app for patterns:
 - `storage.get(key)` and `storage.set(key, value)` for user preferences
@@ -101,11 +103,11 @@ All production apps live at `~/frontieros/frontier-os-app-*`. Use this mapping t
 
 ### Baseline SDK Patterns (all apps)
 **Study any app for:**
-- `SdkProvider` + `useSdk()` hook wiring in Layout.tsx
-- `isInFrontierApp()` detection and `createStandaloneHTML()` fallback
-- Dark theme CSS variables in `index.css`
-- Router setup with `react-router-dom` v7
-- Vite + Vitest configuration
+- SDK method signatures, return types, and error handling (inform useServices() mock layer)
+- Dark theme CSS variables and Tailwind usage
+- Router setup with react-router-dom
+- Component structure and hook patterns
+- Note: These apps use useSdk() directly — new apps use useServices() but the method names are identical
 
 </app_feature_mapping>
 
@@ -272,6 +274,11 @@ How production apps organize code for features similar to this phase:
 [Copy from CONTEXT.md if it exists — locked decisions, discretion areas, deferred ideas]
 
 ## SDK Patterns Found
+
+Frame findings as "Service Patterns" for the planner. While production apps use `sdk.getWallet().method()`, the planner needs to know the method names and types to generate `services.wallet.method()` calls. Document:
+- Method names and signatures (these are the SAME regardless of access pattern)
+- Return types and error handling
+- UI patterns for loading/error/empty states
 
 ### [Module Name] — [Method Name]
 

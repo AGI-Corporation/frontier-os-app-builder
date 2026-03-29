@@ -15,18 +15,25 @@ This workflow runs inside a subagent — it does not spawn further subagents.
 </available_agent_types>
 
 <frontier_os_rules>
-**CRITICAL — These rules apply to ALL code written for Frontier OS apps:**
+**CRITICAL — These rules apply to ALL code written for Frontier OS apps.**
 
-1. **SDK access:** Always via `useSdk()` hook from `src/lib/sdk-context.tsx`. Never instantiate SDK directly in components.
-2. **Dark theme:** Tailwind dark theme. Base: `bg-neutral-950`, text: `text-white`. No white backgrounds anywhere.
-3. **Iframe detection:** `isInFrontierApp()` check in Layout.tsx. Standalone mode shows a banner explaining the app runs inside Frontier OS.
-4. **SdkProvider wrapping:** The entire app is wrapped in SdkProvider. SDK is initialized once via useRef, destroyed on unmount.
-5. **Error handling:** All SDK calls wrapped in try/catch. Loading states for async operations. Error states with user-friendly messages.
-6. **Permissions:** Every SDK method used must have its permission declared in manifest.json.
-7. **CORS:** vercel.json must include all 3 Frontier OS origins in CORS headers.
-8. **TypeScript strict:** All code in TypeScript strict mode. No `any` types unless explicitly justified.
-9. **Imports:** Use `@frontiertower/frontier-sdk` for SDK. Exact import paths, not barrel imports.
-10. **Testing:** Vitest for unit tests. Test files co-located or in `src/test/`.
+**Read the current phase from the plan frontmatter and sdkPhase from manifest.json to determine which tier applies.**
+
+**TIER 1 — ALL PHASES:**
+1. **Dark theme:** Tailwind dark theme. Backgrounds: `bg-background`, `bg-card`, `bg-muted-background`. Text: `text-foreground`, `text-card-foreground`, `text-muted-foreground`. Borders: `border-border`. Interactive: `bg-primary text-primary-foreground`, `bg-accent text-accent-foreground`. Status: `text-success`, `text-danger`, `text-alert`. Inputs: `bg-input`, `ring-ring`, `outline-outline`. **NEVER hardcoded colors** (no bg-white, text-black, bg-gray-900).
+2. **Error handling:** All service calls wrapped in try/catch. Loading states for async operations. Error states with user-friendly messages.
+3. **TypeScript strict:** All code in TypeScript strict mode. No `any` types unless explicitly justified in plan.
+4. **Testing:** Vitest for unit tests. Test files in `src/test/`.
+5. **Service access:** Feature phases use `useServices()` from `src/lib/frontier-services.tsx`. Never import SDK directly in feature hooks or views.
+6. **Mock layer:** Mock services must return realistic data matching SDK return types. Hooks must work identically whether backed by mocks or real SDK.
+
+**TIER 2 — SDK INTEGRATION PHASE ONLY:**
+7. **SDK access:** `useSdk()` hook from `src/lib/sdk-context.tsx`, used ONLY inside `sdk-services.tsx` and `Layout.tsx`. Never in feature code.
+8. **Iframe detection:** `isInFrontierApp()` check in Layout.tsx. Standalone mode shows fallback banner.
+9. **SdkProvider wrapping:** Entire app wrapped in SdkProvider when inside iframe. SDK initialized once via useRef, destroyed on unmount.
+10. **Permissions:** Every SDK method used must have its permission declared in manifest.json.
+11. **CORS:** vercel.json must include all 3 Frontier OS origins (os.frontiertower.io, sandbox.os.frontiertower.io, localhost:5173).
+12. **SDK imports:** Use `@frontiertower/frontier-sdk` for SDK classes and types. Exact import paths, not barrel imports.
 </frontier_os_rules>
 
 <process>
