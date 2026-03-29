@@ -142,6 +142,21 @@ node $HOME/.claude/frontier-os-app-builder/bin/fos-tools.cjs scaffold <template>
 - `vercel.json` — SPA rewrite only at scaffold time. CORS origins added during SDK Integration phase.
 - `package.json` — Must have correct scripts (dev, build, preview, lint, test) and all required dependencies
 
+**Phase 1 scaffold BLOCKLIST — If any of these exist after scaffold, you have a bug. Fix it before committing:**
+- ❌ `src/lib/sdk-context.tsx` — DELETE if created. This file belongs to SDK Integration phase only.
+- ❌ `@frontiertower/frontier-sdk` in package.json — REMOVE from dependencies. SDK is added in SDK Integration phase.
+- ❌ `isInFrontierApp` or `createStandaloneHTML` in Layout.tsx — REWRITE Layout to use simple FrontierServicesProvider + Outlet pattern.
+- ❌ `SdkProvider` anywhere — REPLACE with FrontierServicesProvider.
+- ❌ `useSdk` anywhere — REPLACE with useServices.
+- ❌ Any import from `@frontiertower/frontier-sdk` — REMOVE. The SDK package does not exist in Phase 1.
+- ❌ CORS headers in vercel.json — REMOVE. Use SPA rewrite only.
+
+**Self-check after scaffold (run before committing):**
+```bash
+# All of these must return NO matches. If any match, fix before committing.
+grep -r "sdk-context\|useSdk\|SdkProvider\|@frontiertower/frontier-sdk\|isInFrontierApp\|createStandaloneHTML" src/ package.json vercel.json --include="*.tsx" --include="*.ts" --include="*.json" 2>/dev/null | grep -v node_modules || echo "CLEAN: No SDK artifacts in Phase 1"
+```
+
 </scaffold_execution>
 
 <feature_execution>

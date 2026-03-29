@@ -196,14 +196,27 @@ issue:
    - Plus Jakarta Sans font loading (T-03)
    - Correct package.json scripts: dev, build, preview, lint, test (C-04)
 
+3. **BLOCKLIST CHECK** — Scan the plan for any of these. If found, it is a **blocker**:
+   - ❌ `sdk-context.tsx` referenced as a file to create — belongs to SDK Integration phase only
+   - ❌ `@frontiertower/frontier-sdk` in dependencies — SDK not installed until SDK Integration
+   - ❌ `isInFrontierApp` or `createStandaloneHTML` in any task action — SDK Integration concerns
+   - ❌ `SdkProvider` in any task action — use `FrontierServicesProvider` instead
+   - ❌ `useSdk` in any task action — use `useServices` instead
+   - ❌ `layout.tsx` template (without `-standalone`) — use `layout-standalone.tsx`
+   - ❌ `package.json` template (without `-standalone`) — use `package-standalone.json`
+   - ❌ `vercel.json` template (without `-standalone`) — use `vercel-standalone.json`
+   - ❌ `main-simple.tsx` template (without `-standalone`) — use `main-simple-standalone.tsx`
+
+   If the researcher recommended SDK patterns from production apps, the planner should NOT have included them in Phase 1. Flag as blocker with fix hint: "Phase 1 is standalone-first. Remove SDK artifacts and use standalone templates."
+
 **Example issue:**
 ```yaml
 issue:
   dimension: scaffold_completeness
   severity: blocker
-  description: "Scaffold plan missing vercel.json creation — required for CORS and SPA routing"
+  description: "Phase 1 plan creates sdk-context.tsx — this belongs to SDK Integration phase, not scaffold"
   plan: "01-01"
-  fix_hint: "Add task or expand existing task to create vercel.json with all 3 CORS origin blocks and SPA rewrite"
+  fix_hint: "Remove sdk-context.tsx from plan. Phase 1 uses frontier-services.tsx for the services layer."
 ```
 
 ## Dimension 5: Task Completeness

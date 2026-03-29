@@ -139,6 +139,20 @@ Phase 1 ALWAYS produces a single plan that scaffolds the entire app. This plan u
 - App renders standalone with mock data
 - `useServices()` returns mock implementations
 
+**Phase 1 BLOCKLIST — NEVER include these in a scaffold plan:**
+- ❌ `sdk-context.tsx` — this file is created during SDK Integration phase, NOT Phase 1
+- ❌ `layout.tsx` template — use `layout-standalone.tsx` instead (no iframe detection, no SdkProvider)
+- ❌ `main-simple.tsx` template — use `main-simple-standalone.tsx` instead
+- ❌ `package.json` template — use `package-standalone.json` instead (no SDK dependency)
+- ❌ `vercel.json` template — use `vercel-standalone.json` instead (no CORS headers)
+- ❌ `@frontiertower/frontier-sdk` in dependencies — SDK is added during SDK Integration phase
+- ❌ `isInFrontierApp()` or `createStandaloneHTML()` in Layout — these are SDK Integration concerns
+- ❌ `SdkProvider` wrapping — use `FrontierServicesProvider` instead
+- ❌ `useSdk()` — use `useServices()` instead
+- ❌ Any import from `@frontiertower/frontier-sdk` — the SDK package does not exist in Phase 1
+
+If the researcher recommends SDK patterns from production apps, **ignore those for Phase 1 scaffold**. Production apps use the legacy SDK-first pattern. New apps use standalone-first.
+
 ## Feature Phases (Phase 2+)
 
 Feature phases create plans with tasks for:
