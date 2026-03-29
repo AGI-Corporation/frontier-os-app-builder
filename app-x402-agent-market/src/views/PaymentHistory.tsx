@@ -1,8 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useServices } from '../lib/frontier-services';
 import type { AgentPayment } from '../lib/frontier-services';
 import { EmptyState } from '../components/EmptyState';
+
+function useCopyToClipboard(text: string) {
+  const [copied, setCopied] = useState(false);
+  const copy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard unavailable
+    }
+  }, [text]);
+  return { copied, copy };
+}
+
+const TxHashChip = ({ hash }: { hash: string }) => {
+  const { copied, copy } = useCopyToClipboard(hash);
+  return (
+    <button
+      onClick={copy}
+      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      title={copied ? 'Copied!' : 'Click to copy'}
+    >
+      <span className="font-mono">{hash.slice(0, 8)}…{hash.slice(-6)}</span>
+      {copied ? (
+        <svg className="w-3 h-3 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
+  );
+};
 
 const PaymentRow = ({ payment }: { payment: AgentPayment }) => {
   const date = new Date(payment.timestamp);
@@ -30,9 +66,7 @@ const PaymentRow = ({ payment }: { payment: AgentPayment }) => {
 
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{payment.agentName}</p>
-          <p className="text-xs text-muted-foreground font-mono">
-            {payment.transactionHash.slice(0, 8)}…{payment.transactionHash.slice(-6)}
-          </p>
+          <TxHashChip hash={payment.transactionHash} />
         </div>
       </div>
 
@@ -133,3 +167,5 @@ export const PaymentHistory = () => {
     </div>
   );
 };
+
+

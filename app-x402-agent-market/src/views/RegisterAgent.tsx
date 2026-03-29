@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useServices } from '../lib/frontier-services';
 import { AGENT_CATEGORIES } from '../lib/frontier-services';
 import type { AgentCategory, RegisterAgentParams } from '../lib/frontier-services';
+import { useToast } from '../components/Toast';
 
 const CATEGORY_OPTIONS = AGENT_CATEGORIES;
 
@@ -74,6 +75,7 @@ function validate(form: FormState): FormErrors {
 export const RegisterAgent = () => {
   const navigate = useNavigate();
   const services = useServices();
+  const { toast } = useToast();
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -109,6 +111,7 @@ export const RegisterAgent = () => {
       };
 
       await services.agents.registerAgent(params);
+      toast('Agent registered successfully!', 'success');
       navigate('/my-agents');
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Failed to register agent');

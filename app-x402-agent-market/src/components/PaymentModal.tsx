@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Agent, WalletBalanceFormatted } from '../lib/frontier-services';
 
 interface PaymentModalProps {
@@ -9,6 +9,36 @@ interface PaymentModalProps {
   txHash: string | null;
   onConfirm: () => void;
   onClose: () => void;
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard not available
+    }
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+      title={copied ? 'Copied!' : 'Copy to clipboard'}
+    >
+      {copied ? (
+        <svg className="w-3.5 h-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
+  );
 }
 
 export const PaymentModal = ({
@@ -56,15 +86,21 @@ export const PaymentModal = ({
 
           {/* Tx hash */}
           <div className="w-full bg-muted-background rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">Transaction</p>
-            <p className="text-xs text-foreground font-mono break-all">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Transaction</p>
+              <CopyButton text={txHash} />
+            </div>
+            <p className="text-xs text-foreground font-mono break-all text-left">
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </p>
           </div>
 
           {/* Endpoint */}
           <div className="w-full bg-muted-background rounded-lg p-3 text-left">
-            <p className="text-xs text-muted-foreground mb-1">Agent endpoint (x402)</p>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Agent endpoint (x402)</p>
+              <CopyButton text={agent.endpoint} />
+            </div>
             <p className="text-xs text-primary font-mono break-all">{agent.endpoint}</p>
           </div>
 
@@ -173,3 +209,4 @@ export const PaymentModal = ({
     </div>
   );
 };
+

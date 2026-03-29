@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useServices, EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import type { EvolutionAgentRole, RegisterPipelineParams } from '../lib/frontier-services';
+import { useToast } from '../components/Toast';
 
 interface FormState {
   name: string;
@@ -72,6 +73,7 @@ function validate(form: FormState): FormErrors {
 export const RegisterPipeline = () => {
   const navigate = useNavigate();
   const services = useServices();
+  const { toast } = useToast();
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -111,6 +113,7 @@ export const RegisterPipeline = () => {
       };
 
       await services.evolution.registerPipeline(params);
+      toast('Pipeline registered successfully!', 'success');
       navigate('/evolution');
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Failed to register pipeline');

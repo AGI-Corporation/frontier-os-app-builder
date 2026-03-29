@@ -28,25 +28,34 @@ export const Home = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-8">
       {/* Hero */}
-      <div className="text-center flex flex-col items-center gap-4 pt-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-xs text-primary font-medium">
+      <div className="relative text-center flex flex-col items-center gap-4 pt-8 pb-2">
+        {/* Ambient glow */}
+        <div
+          className="absolute inset-x-0 top-0 h-64 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(118,74,226,0.18) 0%, transparent 70%)',
+          }}
+        />
+
+        <div className="relative inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-xs text-primary font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           x402 Protocol · Pay per call · Powered by FND
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground max-w-md">
+        <h1 className="relative text-2xl sm:text-3xl font-bold text-foreground max-w-md leading-tight">
           The AI Agent Marketplace for Frontier OS
         </h1>
 
-        <p className="text-sm text-muted-foreground max-w-sm">
+        <p className="relative text-sm text-muted-foreground max-w-sm">
           Discover, pay, and invoke AI agent services using the x402 HTTP payment protocol.
           Every call costs FND — no subscriptions, no API keys.
         </p>
 
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <button
             onClick={() => navigate('/market')}
-            className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+            className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             Browse Agents
           </button>
@@ -60,7 +69,7 @@ export const Home = () => {
 
         {/* Balance pill */}
         {balance && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-success" />
             Wallet: <span className="text-foreground font-medium">{balance.total} FND</span>
           </div>

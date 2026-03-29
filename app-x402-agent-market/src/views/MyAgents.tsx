@@ -4,6 +4,7 @@ import { useServices } from '../lib/frontier-services';
 import { CategoryBadge } from '../components/CategoryBadge';
 import { PriceTag } from '../components/PriceTag';
 import { EmptyState } from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 import type { Agent } from '../lib/frontier-services';
 import { useState } from 'react';
 
@@ -70,12 +71,14 @@ const AgentRow = ({
 export const MyAgents = () => {
   const navigate = useNavigate();
   const services = useServices();
+  const { toast } = useToast();
   const { agents, loading, error, refetch } = useUserAgents();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleToggle = async (id: string, active: boolean) => {
     try {
       await services.agents.updateAgent(id, { isActive: active });
+      toast(active ? 'Agent activated' : 'Agent deactivated', 'success');
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Update failed');
@@ -85,6 +88,7 @@ export const MyAgents = () => {
   const handleDelete = async (id: string) => {
     try {
       await services.agents.deleteAgent(id);
+      toast('Agent deleted', 'info');
       refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Delete failed');

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useServices, EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import { useEvolutionTasks } from '../hooks/useEvolutionTasks';
+import { useToast } from '../components/Toast';
 import type {
   EvolutionPipeline,
   EvolutionAgentRole,
@@ -157,6 +158,7 @@ export const PipelineDetail = () => {
   const { pipelineId } = useParams<{ pipelineId: string }>();
   const navigate = useNavigate();
   const services = useServices();
+  const { toast } = useToast();
 
   const [pipeline, setPipeline] = useState<EvolutionPipeline | null>(null);
   const [pipelineLoading, setPipelineLoading] = useState(true);
@@ -182,6 +184,7 @@ export const PipelineDetail = () => {
     try {
       const updated = await services.evolution.syncPipeline(pipelineId);
       setPipeline(updated);
+      toast('Pipeline synced', 'success');
     } finally {
       setSyncing(false);
     }
@@ -215,6 +218,7 @@ export const PipelineDetail = () => {
       transactionHash: txReceipt.transactionHash,
     });
 
+    toast(`Task dispatched: ${form.title}`, 'success');
     refetch();
   };
 

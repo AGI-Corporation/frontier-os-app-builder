@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvolutionTasks, useEvolutionPipelines } from '../hooks/useEvolutionTasks';
 import { EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import type { EvolutionAgentRole, EvolutionTaskStatus } from '../lib/frontier-services';
+import { useToast } from '../components/Toast';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ function fmt(iso: string) {
 
 export const EvolutionTasks = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { tasks, logs, loading, error, refetch } = useEvolutionTasks();
   const {
     pipelines,
@@ -48,6 +50,11 @@ export const EvolutionTasks = () => {
   } = useEvolutionPipelines();
 
   const [activeTab, setActiveTab] = useState<'tasks' | 'pipelines' | 'logs'>('tasks');
+
+  const handleSync = async (pipelineId: string, pipelineName: string) => {
+    await sync(pipelineId);
+    toast(`${pipelineName} synced`, 'success');
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -243,7 +250,7 @@ export const EvolutionTasks = () => {
                     {pipeline.isActive ? 'Active' : 'Inactive'}
                   </span>
                   <button
-                    onClick={() => sync(pipeline.id)}
+                    onClick={() => handleSync(pipeline.id, pipeline.name)}
                     className="px-2 py-0.5 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Sync
