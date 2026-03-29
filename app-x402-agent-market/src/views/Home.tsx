@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAgents } from '../hooks/useAgents';
 import { useBalance } from '../hooks/useBalance';
 import { AgentCard } from '../components/AgentCard';
+import { ActivityFeed } from '../components/ActivityFeed';
 import type { AgentCategory } from '../lib/frontier-services';
+import { getTierInfo } from '../lib/agent-tiers';
 
 const CATEGORIES: { value: AgentCategory | 'all'; label: string; emoji: string }[] = [
   { value: 'all', label: 'All', emoji: '🌐' },
@@ -127,6 +129,49 @@ export const Home = () => {
             <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Top agents by tier */}
+      {!loading && agents.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">🏆 Top Agents by Evolution Tier</h2>
+            <button onClick={() => navigate('/market')} className="text-xs text-primary hover:underline">
+              Browse all →
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {[...agents]
+              .sort((a, b) => b.callCount - a.callCount)
+              .slice(0, 5)
+              .map((agent, idx) => {
+                const tier = getTierInfo(agent.callCount);
+                return (
+                  <button
+                    key={agent.id}
+                    onClick={() => navigate(`/agent/${agent.id}`)}
+                    className="flex items-center gap-3 px-3 py-2.5 bg-card border border-border rounded-lg hover:border-outline transition-colors text-left"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-muted-background text-xs flex items-center justify-center text-muted-foreground font-semibold flex-shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm flex-shrink-0">{tier.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{agent.name}</p>
+                      <p className="text-xs text-muted-foreground">{tier.label} · {agent.callCount.toLocaleString()} calls</p>
+                    </div>
+                    <span className="text-xs font-semibold text-primary flex-shrink-0">{agent.pricePerCall} FND</span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* Live Activity */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">⚡ Recent x402 Activity</h2>
+        <ActivityFeed />
       </div>
 
       {/* Protocol info */}

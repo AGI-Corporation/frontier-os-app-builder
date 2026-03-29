@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useEvolutionTasks, useEvolutionPipelines } from '../hooks/useEvolutionTasks';
 import { EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import type { EvolutionAgentRole, EvolutionTaskStatus } from '../lib/frontier-services';
@@ -38,6 +39,7 @@ function fmt(iso: string) {
 // ── EvolutionTasks View ───────────────────────────────────────────────────────
 
 export const EvolutionTasks = () => {
+  const navigate = useNavigate();
   const { tasks, logs, loading, error, refetch } = useEvolutionTasks();
   const {
     pipelines,
@@ -50,15 +52,23 @@ export const EvolutionTasks = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">⚡</span>
-          <h1 className="text-xl font-bold text-foreground">Evolution Agent Tasks</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <h1 className="text-xl font-bold text-foreground">Evolution Agent Tasks</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Cross-system tasks routed between Frontier x402 payments and Evolution-Agent
+            pipelines. Observer → Architect → Auditor → Planner.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Cross-system tasks routed between Frontier x402 payments and Evolution-Agent
-          pipelines. Observer → Architect → Auditor → Planner.
-        </p>
+        <button
+          onClick={() => navigate('/evolution/register-pipeline')}
+          className="px-3 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors flex-shrink-0"
+        >
+          + Pipeline
+        </button>
       </div>
 
       {/* Tabs */}
@@ -267,6 +277,12 @@ export const EvolutionTasks = () => {
                 <span>
                   Synced: <span className="text-foreground">{fmt(pipeline.syncedAt)}</span>
                 </span>
+                <button
+                  onClick={() => navigate(`/evolution/pipeline/${pipeline.id}`)}
+                  className="ml-auto text-primary hover:underline"
+                >
+                  View Details →
+                </button>
               </div>
             </div>
           ))}

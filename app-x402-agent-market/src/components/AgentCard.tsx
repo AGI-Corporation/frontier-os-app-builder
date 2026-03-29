@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Agent } from '../lib/frontier-services';
 import { CategoryBadge } from './CategoryBadge';
 import { PriceTag } from './PriceTag';
+import { TierBadge } from './TierBadge';
 
 interface AgentCardProps {
   agent: Agent;
@@ -30,9 +31,12 @@ export const AgentCard = ({ agent }: AgentCardProps) => {
       {/* Footer */}
       <div className="flex items-center justify-between">
         <PriceTag price={agent.pricePerCall} size="sm" />
-        <span className="text-xs text-muted-foreground">
-          {agent.callCount.toLocaleString()} calls
-        </span>
+        <div className="flex items-center gap-2">
+          <TierBadge callCount={agent.callCount} />
+          <span className="text-xs text-muted-foreground">
+            {agent.callCount.toLocaleString()} calls
+          </span>
+        </div>
       </div>
     </Link>
   );

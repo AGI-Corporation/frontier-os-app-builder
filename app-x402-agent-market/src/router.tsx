@@ -7,6 +7,8 @@ import { RegisterAgent } from './views/RegisterAgent';
 import { MyAgents } from './views/MyAgents';
 import { PaymentHistory } from './views/PaymentHistory';
 import { EvolutionTasks } from './views/EvolutionTasks';
+import { RegisterPipeline } from './views/RegisterPipeline';
+import { PipelineDetail } from './views/PipelineDetail';
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +22,8 @@ export const router = createBrowserRouter([
       { path: 'my-agents', element: <MyAgents /> },
       { path: 'payments', element: <PaymentHistory /> },
       { path: 'evolution', element: <EvolutionTasks /> },
+      { path: 'evolution/register-pipeline', element: <RegisterPipeline /> },
+      { path: 'evolution/pipeline/:pipelineId', element: <PipelineDetail /> },
     ],
   },
 ]);

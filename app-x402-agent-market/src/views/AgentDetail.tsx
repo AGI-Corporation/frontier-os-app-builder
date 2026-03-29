@@ -5,8 +5,10 @@ import type { Agent } from '../lib/frontier-services';
 import { CategoryBadge } from '../components/CategoryBadge';
 import { PriceTag } from '../components/PriceTag';
 import { PaymentModal } from '../components/PaymentModal';
+import { TierBadge } from '../components/TierBadge';
 import { useBalance } from '../hooks/useBalance';
 import { useAgentPayment } from '../hooks/useAgentPayment';
+import { getTierInfo, getNextTierInfo, getTierProgress } from '../lib/agent-tiers';
 
 export const AgentDetail = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -130,6 +132,47 @@ export const AgentDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Evolution Tier */}
+        {(() => {
+          const tier = getTierInfo(agent.callCount);
+          const next = getNextTierInfo(agent.callCount);
+          const progress = getTierProgress(agent.callCount);
+          return (
+            <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Evolution Tier
+              </h2>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <TierBadge callCount={agent.callCount} size="md" />
+                  <p className="text-xs text-muted-foreground">{tier.description}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-base font-bold text-foreground">{agent.callCount.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">total calls</p>
+                </div>
+              </div>
+              {next && (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{tier.emoji} {tier.label}</span>
+                    <span>{next.emoji} {next.label} in {(next.minCalls - agent.callCount).toLocaleString()} calls</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted-background overflow-hidden">
+                    <div
+                      className={['h-full rounded-full transition-all', tier.progressClass].join(' ')}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {!next && (
+                <p className="text-xs text-primary font-medium">✓ Maximum tier achieved</p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Technical details */}
         <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
