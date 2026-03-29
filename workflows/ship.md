@@ -128,57 +128,89 @@ Preflight failed. Fix the issues above before deploying.
 **Do NOT proceed to deployment if preflight fails.** The user must fix issues and re-run `/fos:ship`.
 </step>
 
-<step name="check_vercel_cli">
-**Check if Vercel CLI is available.**
+<step name="check_tools">
+**Check that gh and vercel CLIs are available and authenticated.**
 
 ```bash
-which vercel 2>/dev/null && vercel --version 2>/dev/null
+echo "=== GitHub CLI ==="
+which gh && gh auth status 2>&1 | head -3
+
+echo "=== Vercel CLI ==="
+which vercel && vercel whoami 2>&1
 ```
 
-**If Vercel CLI not found:**
+**If gh not found or not authenticated:**
 ```
-Vercel CLI is not installed. Install it to deploy:
+GitHub CLI is required for automated deployment. Install and authenticate:
+
+  brew install gh
+  gh auth login
+
+Then re-run `/fos:ship`.
+```
+Exit workflow.
+
+**If vercel not found or not authenticated:**
+```
+Vercel CLI is required for deployment. Install and authenticate:
 
   npm i -g vercel
-
-Then log in:
-
   vercel login
 
-After that, re-run `/fos:ship`.
+Then re-run `/fos:ship`.
 ```
+Exit workflow.
+</step>
 
-Use AskUserQuestion:
-- header: "Vercel CLI"
-- question: "Vercel CLI is not installed. What do you want to do?"
-- options:
-  - "Install it now" — Run `npm i -g vercel` and continue
-  - "Skip deployment" — Just run preflight, I'll deploy manually
-  - "Cancel" — Exit
+<step name="create_github_repo">
+**Create GitHub repo and push code.**
 
-**If "Install it now":**
+Read the app name from manifest.json to construct the repo name.
+
 ```bash
-npm i -g vercel
-echo "Vercel installed. Run 'vercel login' to authenticate, then re-run /fos:ship."
-```
-Exit — user needs to authenticate manually.
+# Get package name from manifest (e.g., "app-tip-jar" → "frontier-os-app-tip-jar")
+PACKAGE_NAME=$(node -e "const m=JSON.parse(require('fs').readFileSync('.frontier-app/manifest.json','utf8')); console.log(m.packageName)")
+REPO_NAME="frontier-os-${PACKAGE_NAME}"
+APP_DESC=$(node -e "const m=JSON.parse(require('fs').readFileSync('.frontier-app/manifest.json','utf8')); console.log(m.description)")
+ORG="BerlinhouseLabs"
 
-**If "Skip deployment":** Jump to update_state step, mark as "preflight-passed".
+echo "Repo: $ORG/$REPO_NAME"
+```
+
+**Check if remote already exists:**
+```bash
+git remote get-url origin 2>/dev/null
+```
+
+**If no remote:**
+```bash
+# Create private repo in the org
+gh repo create "$ORG/$REPO_NAME" --private --description "$APP_DESC" --source . --push
+
+# Verify
+gh repo view "$ORG/$REPO_NAME" --json url -q .url
+```
+
+**If remote already exists:** Just push.
+```bash
+git push -u origin main
+```
 </step>
 
 <step name="deploy_to_vercel">
-**Deploy to Vercel production.**
+**Deploy to Vercel production — fully automated, no interactive prompts.**
 
 ```bash
 # Check if already linked to a Vercel project
 if [ -d ".vercel" ]; then
   echo "Vercel project already linked."
+  vercel --prod 2>&1
 else
-  echo "First deployment — Vercel will prompt for project setup."
+  # First deployment — link and deploy non-interactively
+  # Use --yes to skip all interactive prompts
+  vercel link --yes 2>&1
+  vercel --prod 2>&1
 fi
-
-# Deploy to production
-vercel --prod 2>&1
 DEPLOY_STATUS=$?
 ```
 
@@ -194,12 +226,21 @@ Status: Live
 The app is now accessible at the URL above.
 ```
 
-**If deployment fails:**
+**If `vercel link --yes` fails** (e.g., needs team selection):
+Try with explicit project name:
+```bash
+PACKAGE_NAME=$(node -e "const m=JSON.parse(require('fs').readFileSync('.frontier-app/manifest.json','utf8')); console.log(m.packageName)")
+vercel link --yes --project "$PACKAGE_NAME" 2>&1
+vercel --prod 2>&1
 ```
-Deployment failed. Common issues:
-- Not authenticated: run `vercel login`
-- Build error on Vercel: check the build output above
-- Missing environment variables: check Vercel dashboard
+
+**If deployment still fails:**
+```
+Deployment failed. Ask the user to run this interactively:
+
+  ! vercel --prod
+
+This will prompt for team/project selection. After first deploy, subsequent deploys are automatic.
 ```
 </step>
 
