@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAgents } from '../hooks/useAgents';
 import { useBalance } from '../hooks/useBalance';
+import { useFavorites } from '../hooks/useFavorites';
 import { AgentCard } from '../components/AgentCard';
 import { ActivityFeed } from '../components/ActivityFeed';
 import type { AgentCategory } from '../lib/frontier-services';
@@ -22,19 +23,21 @@ export const Home = () => {
   const [activeCategory, setActiveCategory] = useState<AgentCategory | 'all'>('all');
   const { agents, loading } = useAgents(activeCategory);
   const { balance } = useBalance();
+  const { favorites, isFavorite, toggle } = useFavorites();
 
   const featuredAgents = agents.slice(0, 3);
+  const savedAgents = agents.filter((a) => favorites.has(a.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-8">
       {/* Hero */}
       <div className="relative text-center flex flex-col items-center gap-4 pt-8 pb-2">
-        {/* Ambient glow */}
+        {/* Ambient glow – uses the primary color CSS variable */}
         <div
           className="absolute inset-x-0 top-0 h-64 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(118,74,226,0.18) 0%, transparent 70%)',
+              'radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--color-primary) 18%, transparent) 0%, transparent 70%)',
           }}
         />
 
@@ -120,7 +123,7 @@ export const Home = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {featuredAgents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} />
+              <AgentCard key={agent.id} agent={agent} isFavorite={isFavorite(agent.id)} onFavorite={toggle} />
             ))}
           </div>
         )}
@@ -173,6 +176,26 @@ export const Home = () => {
                   </button>
                 );
               })}
+          </div>
+        </div>
+      )}
+
+      {/* Saved agents */}
+      {!loading && savedAgents.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">❤️ Saved Agents</h2>
+            <button
+              onClick={() => navigate('/market')}
+              className="text-xs text-primary hover:underline"
+            >
+              View all →
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {savedAgents.map((agent) => (
+              <AgentCard key={agent.id} agent={agent} isFavorite onFavorite={toggle} />
+            ))}
           </div>
         </div>
       )}
