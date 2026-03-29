@@ -8,6 +8,7 @@ export const NavBar = () => {
     { to: '/market', label: 'Market' },
     { to: '/my-agents', label: 'My Agents' },
     { to: '/payments', label: 'Payments' },
+    { to: '/evolution', label: '⚡ Evolution' },
   ];
 
   return (
