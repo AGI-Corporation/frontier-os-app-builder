@@ -1,5 +1,8 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useRef, type ReactNode } from 'react';
+import { isInFrontierApp } from '@frontiertower/frontier-sdk/ui-utils';
 import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
+import { useSdk } from './sdk-context';
+import { createSdkServices } from './sdk-services';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
 
@@ -374,10 +377,35 @@ export const useServices = (): FrontierServices => {
   return services;
 };
 
-export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
-  const services = createMockServices();
+// Internal provider component that runs inside <SdkProvider> to access useSdk().
+const SdkServicesInner = ({ children }: { children: ReactNode }) => {
+  const sdk = useSdk();
+  const servicesRef = useRef<FrontierServices | null>(null);
+  if (!servicesRef.current) {
+    servicesRef.current = createSdkServices(sdk);
+  }
   return (
-    <FrontierServicesContext.Provider value={services}>
+    <FrontierServicesContext.Provider value={servicesRef.current}>
+      {children}
+    </FrontierServicesContext.Provider>
+  );
+};
+
+export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
+  const servicesRef = useRef<FrontierServices | null>(null);
+
+  if (isInFrontierApp()) {
+    // Running inside Frontier Wallet iframe — use real SDK-backed services.
+    // Must be rendered inside <SdkProvider> in Layout.tsx.
+    return <SdkServicesInner>{children}</SdkServicesInner>;
+  }
+
+  // Running standalone (plain browser) — use mock services for development.
+  if (!servicesRef.current) {
+    servicesRef.current = createMockServices();
+  }
+  return (
+    <FrontierServicesContext.Provider value={servicesRef.current}>
       {children}
     </FrontierServicesContext.Provider>
   );

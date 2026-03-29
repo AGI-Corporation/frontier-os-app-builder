@@ -27,7 +27,7 @@
     { "number": 2, "name": "Agent Marketplace", "status": "complete" },
     { "number": 3, "name": "Agent Registration", "status": "complete" },
     { "number": 4, "name": "x402 Payments", "status": "complete" },
-    { "number": 5, "name": "SDK Integration", "status": "not-started" }
+    { "number": 5, "name": "SDK Integration", "status": "complete" }
   ],
   "sdkPhase": 5
 }
