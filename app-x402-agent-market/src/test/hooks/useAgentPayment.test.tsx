@@ -103,4 +103,59 @@ describe('useAgentPayment', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
+
+  it('starts with empty taskDispatchLogs', () => {
+    const { result } = renderHook(() => useAgentPayment(), { wrapper });
+    expect(result.current.taskDispatchLogs).toEqual([]);
+  });
+
+  it('dispatchEvolutionTask sets txHash and returns a task', async () => {
+    const { result } = renderHook(() => useAgentPayment(), { wrapper });
+
+    // Use a pipeline id as the agent id so the evolution bridge can match it
+    const evolutionAgent = { ...mockAgent, id: 'pipeline-001' };
+
+    let task: import('../../lib/frontier-services').EvolutionTask | null = null;
+    await act(async () => {
+      task = await result.current.dispatchEvolutionTask(
+        evolutionAgent,
+        sufficientBalance,
+        'Scan runtime logs',
+        'Observer scans last 50 lines of system.log',
+        'observer',
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.txHash).not.toBeNull();
+      expect(result.current.error).toBeNull();
+    });
+
+    expect(task).not.toBeNull();
+    expect(task?.role).toBe('observer');
+    expect(task?.status).toBe('running');
+    expect(result.current.taskDispatchLogs.length).toBeGreaterThan(0);
+  });
+
+  it('dispatchEvolutionTask sets error on insufficient balance', async () => {
+    const { result } = renderHook(() => useAgentPayment(), { wrapper });
+
+    let task: import('../../lib/frontier-services').EvolutionTask | null = null;
+    await act(async () => {
+      task = await result.current.dispatchEvolutionTask(
+        mockAgent,
+        insufficientBalance,
+        'Scan logs',
+        'Observer task',
+        'observer',
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).not.toBeNull();
+      expect(result.current.error).toContain('Insufficient balance');
+    });
+
+    expect(task).toBeNull();
+  });
 });

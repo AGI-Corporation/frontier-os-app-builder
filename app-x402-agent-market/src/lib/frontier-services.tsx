@@ -1,4 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
+import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
 
@@ -122,7 +123,24 @@ export interface FrontierServices {
   wallet: WalletService;
   user: UserService;
   agents: AgentService;
+  evolution: EvolutionBridgeService;
 }
+
+// Re-export evolution types so consumers can import from a single place
+export type { EvolutionBridgeService } from './evolution-bridge';
+export {
+  EVOLUTION_AGENT_ROLES,
+  createEvolutionBridgeService,
+} from './evolution-bridge';
+export type {
+  EvolutionAgentRole,
+  EvolutionTask,
+  EvolutionPipeline,
+  EvolutionTaskStatus,
+  TaskRoutingLog,
+  RegisterPipelineParams,
+  DispatchTaskParams,
+} from './evolution-bridge';
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
@@ -343,7 +361,7 @@ export function createMockServices(): FrontierServices {
     },
   };
 
-  return { wallet, user, agents };
+  return { wallet, user, agents, evolution: createEvolutionBridgeService() };
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────

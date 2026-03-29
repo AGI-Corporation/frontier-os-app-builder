@@ -6,6 +6,7 @@ import { AgentDetail } from './views/AgentDetail';
 import { RegisterAgent } from './views/RegisterAgent';
 import { MyAgents } from './views/MyAgents';
 import { PaymentHistory } from './views/PaymentHistory';
+import { EvolutionTasks } from './views/EvolutionTasks';
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: 'register', element: <RegisterAgent /> },
       { path: 'my-agents', element: <MyAgents /> },
       { path: 'payments', element: <PaymentHistory /> },
+      { path: 'evolution', element: <EvolutionTasks /> },
     ],
   },
 ]);
