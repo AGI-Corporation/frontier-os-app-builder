@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useEvolutionTasks, useEvolutionPipelines } from '../hooks/useEvolutionTasks';
 import { EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import type { EvolutionAgentRole, EvolutionTaskStatus } from '../lib/frontier-services';
@@ -45,6 +46,7 @@ export const EvolutionTasks = () => {
     sync,
   } = useEvolutionPipelines();
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'tasks' | 'pipelines' | 'logs'>('tasks');
 
   return (
@@ -197,6 +199,15 @@ export const EvolutionTasks = () => {
       {/* Pipelines Tab */}
       {activeTab === 'pipelines' && (
         <div className="flex flex-col gap-3">
+          <div className="flex justify-end">
+            <button
+              onClick={() => navigate('/evolution/register-pipeline')}
+              className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              + Register Pipeline
+            </button>
+          </div>
+
           {pipelinesLoading && (
             <div className="text-center py-12 text-muted-foreground text-sm">
               Loading pipelines…
@@ -237,6 +248,12 @@ export const EvolutionTasks = () => {
                     className="px-2 py-0.5 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Sync
+                  </button>
+                  <button
+                    onClick={() => navigate(`/evolution/pipeline/${pipeline.id}`)}
+                    className="px-2 py-0.5 text-xs border border-primary/30 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    View →
                   </button>
                 </div>
               </div>

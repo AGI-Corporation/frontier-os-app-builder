@@ -1,5 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
+import { isInFrontierApp } from '@frontiertower/frontier-sdk/ui-utils';
 import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
+import { useSdkServices } from './sdk-services';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
 
@@ -374,7 +376,22 @@ export const useServices = (): FrontierServices => {
   return services;
 };
 
+// Inner component rendered only when inside the Frontier Wallet iframe.
+// It can safely call useSdkServices() (which calls useSdk()) because SdkProvider
+// is already mounted by the time this renders.
+const SdkServicesInner = ({ children }: { children: ReactNode }) => {
+  const services = useSdkServices();
+  return (
+    <FrontierServicesContext.Provider value={services}>
+      {children}
+    </FrontierServicesContext.Provider>
+  );
+};
+
 export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
+  if (isInFrontierApp()) {
+    return <SdkServicesInner>{children}</SdkServicesInner>;
+  }
   const services = createMockServices();
   return (
     <FrontierServicesContext.Provider value={services}>
