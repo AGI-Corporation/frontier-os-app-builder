@@ -5,8 +5,8 @@
 - **Milestone**: v1
 - **Current Phase**: 5 (SDK Integration)
 - **Current Plan**: 05-01
-- **Status**: ready-to-plan
-- **Next Action**: `/fos:plan 5`
+- **Status**: complete
+- **Next Action**: Ship v1
 
 ## App Reference
 
@@ -31,8 +31,8 @@ None.
 
 ## Metrics
 
-- Phases complete: 4/5
-- Plans complete: 7/8
+- Phases complete: 5/5
+- Plans complete: 8/8
 
 ---
-*Last updated: 2026-03-29 after phases 1-4 complete*
+*Last updated: 2026-03-30 after all 5 phases complete*

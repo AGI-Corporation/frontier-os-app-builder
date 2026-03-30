@@ -1,4 +1,7 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { isInFrontierApp } from '@frontiertower/frontier-sdk/ui-utils';
+import { useSdk } from './sdk-context';
+import { createSdkServices } from './sdk-services';
 import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
@@ -374,10 +377,24 @@ export const useServices = (): FrontierServices => {
   return services;
 };
 
-export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
-  const services = createMockServices();
+// Internal provider that uses the real SDK (rendered only when inside the Frontier iframe)
+const SdkServicesInner = ({ children }: { children: ReactNode }) => {
+  const sdk = useSdk();
+  const services = useMemo(() => createSdkServices(sdk), [sdk]);
   return (
     <FrontierServicesContext.Provider value={services}>
+      {children}
+    </FrontierServicesContext.Provider>
+  );
+};
+
+export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
+  const mockServices = useMemo(() => createMockServices(), []);
+  if (isInFrontierApp()) {
+    return <SdkServicesInner>{children}</SdkServicesInner>;
+  }
+  return (
+    <FrontierServicesContext.Provider value={mockServices}>
       {children}
     </FrontierServicesContext.Provider>
   );

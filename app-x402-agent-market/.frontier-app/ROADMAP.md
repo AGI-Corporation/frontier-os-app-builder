@@ -10,7 +10,7 @@ The x402 Agent Market brings the emerging x402 HTTP payment protocol to the Fron
 - [x] **Phase 2: Agent Marketplace** — Browse, search, filter agent listings with category navigation
 - [x] **Phase 3: Agent Registration** — List your x402 agent, manage your listings, deactivate/delete
 - [x] **Phase 4: x402 Payments** — Pay for agent calls with FND, payment modal, balance check, tx confirmation
-- [ ] **Phase 5: SDK Integration** — Wire SDK, create adapter, upgrade Layout for iframe
+- [x] **Phase 5: SDK Integration** — Wire SDK, create adapter, upgrade Layout for iframe
 
 ## Phase Details
 
@@ -90,7 +90,7 @@ Plans:
 **Plans**: 1 plan (mechanical)
 
 Plans:
-- [ ] 05-01: SDK dependency, adapter, Layout upgrade, CORS
+- [x] 05-01: SDK dependency, adapter, Layout upgrade, CORS
 
 ## Progress
 
@@ -100,8 +100,8 @@ Plans:
 | 2. Agent Marketplace | 2/2 | Complete | 2026-03-29 |
 | 3. Agent Registration | 2/2 | Complete | 2026-03-29 |
 | 4. x402 Payments | 2/2 | Complete | 2026-03-29 |
-| 5. SDK Integration | 0/1 | Not started | - |
+| 5. SDK Integration | 1/1 | Complete | 2026-03-30 |
 
 ---
 *Roadmap created: 2026-03-29*
-*Last updated: 2026-03-29 after phases 1-4 complete*
+*Last updated: 2026-03-30 after all 5 phases complete*
