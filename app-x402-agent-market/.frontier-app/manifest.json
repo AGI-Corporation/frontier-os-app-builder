@@ -2,7 +2,7 @@
   "name": "x402 Agent Market",
   "packageName": "app-x402-agent-market",
   "description": "A marketplace for AI agents and services using the x402 HTTP payment protocol, powered by Frontier Dollars",
-  "sdkVersion": "latest",
+  "sdkVersion": "0.20.0",
   "devPort": 5185,
   "modules": ["Wallet", "User", "Storage", "Chain", "ThirdParty"],
   "permissions": [
@@ -27,7 +27,7 @@
     { "number": 2, "name": "Agent Marketplace", "status": "complete" },
     { "number": 3, "name": "Agent Registration", "status": "complete" },
     { "number": 4, "name": "x402 Payments", "status": "complete" },
-    { "number": 5, "name": "SDK Integration", "status": "not-started" }
+    { "number": 5, "name": "SDK Integration", "status": "complete" }
   ],
   "sdkPhase": 5
 }

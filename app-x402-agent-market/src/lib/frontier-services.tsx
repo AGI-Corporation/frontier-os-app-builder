@@ -1,4 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
+import { isInFrontierApp } from '@frontiertower/frontier-sdk/ui-utils';
+import { useSdkServices } from './sdk-services';
 import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
@@ -374,10 +376,22 @@ export const useServices = (): FrontierServices => {
   return services;
 };
 
-export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
-  const services = createMockServices();
+// Inner component — only rendered when inside SdkProvider (i.e. in Frontier iframe)
+const SdkServicesInner = ({ children }: { children: ReactNode }) => {
+  const services = useSdkServices();
   return (
     <FrontierServicesContext.Provider value={services}>
+      {children}
+    </FrontierServicesContext.Provider>
+  );
+};
+
+export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
+  if (isInFrontierApp()) {
+    return <SdkServicesInner>{children}</SdkServicesInner>;
+  }
+  return (
+    <FrontierServicesContext.Provider value={createMockServices()}>
       {children}
     </FrontierServicesContext.Provider>
   );

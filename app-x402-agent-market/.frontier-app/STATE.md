@@ -5,8 +5,8 @@
 - **Milestone**: v1
 - **Current Phase**: 5 (SDK Integration)
 - **Current Plan**: 05-01
-- **Status**: ready-to-plan
-- **Next Action**: `/fos:plan 5`
+- **Status**: complete
+- **Next Action**: `v1 complete — ready to ship with /fos:ship`
 
 ## App Reference
 
@@ -24,6 +24,7 @@
 | Use `transferOverallFrontierDollar` for payments | Prefers iFND then FND — best UX | Good |
 | x402 HTTP call done externally | App handles payment side; HTTP call stays in user's client | Good |
 | Mock agents seeded in frontier-services.tsx | Enables standalone dev without SDK | Good |
+| SdkServicesInner pattern | FrontierServicesProvider detects iframe and routes to real SDK or mocks | Good |
 
 ## Blockers
 
@@ -31,8 +32,8 @@ None.
 
 ## Metrics
 
-- Phases complete: 4/5
-- Plans complete: 7/8
+- Phases complete: 5/5
+- Plans complete: 8/8
 
 ---
-*Last updated: 2026-03-29 after phases 1-4 complete*
+*Last updated: 2026-03-30 after Phase 5 SDK Integration complete*
