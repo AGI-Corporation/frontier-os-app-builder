@@ -1,5 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
+import { isInFrontierApp } from '@frontiertower/frontier-sdk/ui-utils';
 import { createEvolutionBridgeService, type EvolutionBridgeService } from './evolution-bridge';
+import { useSdk } from './sdk-context';
+import { createSdkServices } from './sdk-services';
 
 // ── Shared Types ────────────────────────────────────────────────────────────
 
@@ -374,10 +377,22 @@ export const useServices = (): FrontierServices => {
   return services;
 };
 
-export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
-  const services = createMockServices();
+const SdkServicesInner = ({ children }: { children: ReactNode }) => {
+  const sdk = useSdk();
+  const services = createSdkServices(sdk);
   return (
     <FrontierServicesContext.Provider value={services}>
+      {children}
+    </FrontierServicesContext.Provider>
+  );
+};
+
+export const FrontierServicesProvider = ({ children }: { children: ReactNode }) => {
+  if (isInFrontierApp()) {
+    return <SdkServicesInner>{children}</SdkServicesInner>;
+  }
+  return (
+    <FrontierServicesContext.Provider value={createMockServices()}>
       {children}
     </FrontierServicesContext.Provider>
   );
