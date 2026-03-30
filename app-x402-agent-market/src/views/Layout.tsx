@@ -4,6 +4,7 @@ import { isInFrontierApp, createStandaloneHTML } from '@frontiertower/frontier-s
 import { SdkProvider } from '../lib/sdk-context';
 import { FrontierServicesProvider } from '../lib/frontier-services';
 import { NavBar } from '../components/NavBar';
+import { ToastProvider } from '../components/Toast';
 
 export const Layout = () => {
   const [loading, setLoading] = useState(true);
@@ -42,12 +43,14 @@ export const Layout = () => {
   return (
     <SdkProvider>
       <FrontierServicesProvider>
-        <div className="flex flex-col min-h-screen bg-background">
-          <NavBar />
-          <main className="flex-1 overflow-y-auto">
-            <Outlet />
-          </main>
-        </div>
+        <ToastProvider>
+          <div className="flex flex-col min-h-screen bg-background">
+            <NavBar />
+            <main className="flex-1 overflow-y-auto">
+              <Outlet />
+            </main>
+          </div>
+        </ToastProvider>
       </FrontierServicesProvider>
     </SdkProvider>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEvolutionTasks, useEvolutionPipelines } from '../hooks/useEvolutionTasks';
 import { EVOLUTION_AGENT_ROLES } from '../lib/frontier-services';
 import type { EvolutionAgentRole, EvolutionTaskStatus } from '../lib/frontier-services';
@@ -44,21 +45,30 @@ export const EvolutionTasks = () => {
     loading: pipelinesLoading,
     sync,
   } = useEvolutionPipelines();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'tasks' | 'pipelines' | 'logs'>('tasks');
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">⚡</span>
-          <h1 className="text-xl font-bold text-foreground">Evolution Agent Tasks</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <h1 className="text-xl font-bold text-foreground">Evolution Agent Tasks</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Cross-system tasks routed between Frontier x402 payments and Evolution-Agent
+            pipelines. Observer → Architect → Auditor → Planner.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Cross-system tasks routed between Frontier x402 payments and Evolution-Agent
-          pipelines. Observer → Architect → Auditor → Planner.
-        </p>
+        <Link
+          to="/evolution/register-pipeline"
+          className="shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors no-underline"
+        >
+          + Register Pipeline
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -212,7 +222,8 @@ export const EvolutionTasks = () => {
           {pipelines.map((pipeline) => (
             <div
               key={pipeline.id}
-              className="border border-border rounded-xl p-4 flex flex-col gap-3 bg-card"
+              className="border border-border rounded-xl p-4 flex flex-col gap-3 bg-card hover:border-outline transition-colors cursor-pointer"
+              onClick={() => navigate(`/evolution/pipeline/${pipeline.id}`)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-0.5 min-w-0">
@@ -233,7 +244,7 @@ export const EvolutionTasks = () => {
                     {pipeline.isActive ? 'Active' : 'Inactive'}
                   </span>
                   <button
-                    onClick={() => sync(pipeline.id)}
+                    onClick={(e) => { e.stopPropagation(); sync(pipeline.id); }}
                     className="px-2 py-0.5 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Sync

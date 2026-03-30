@@ -145,6 +145,15 @@ export type {
   DispatchTaskParams,
 } from './evolution-bridge';
 
+// Re-export agent tier types so consumers can import from a single place
+export {
+  AGENT_TIERS,
+  getTierInfo,
+  getNextTierInfo,
+  getTierProgress,
+} from './agent-tiers';
+export type { AgentTier, TierInfo } from './agent-tiers';
+
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
 const MOCK_AGENTS: Agent[] = [
