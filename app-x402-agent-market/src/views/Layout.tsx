@@ -14,8 +14,6 @@ export const Layout = () => {
 
     if (!inFrontier) {
       setStandaloneHtml(createStandaloneHTML('x402 Agent Market'));
-      setLoading(false);
-      return;
     }
 
     setLoading(false);

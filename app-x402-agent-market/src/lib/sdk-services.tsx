@@ -60,7 +60,7 @@ export function createSdkServices(sdk: FrontierSDK): FrontierServices {
         ]);
         const user = await sdkUser.getDetails();
         const newAgent: Agent = {
-          id: `agent-${Date.now()}`,
+          id: `agent-${crypto.randomUUID()}`,
           ...params,
           ownerAddress: address,
           ownerName:
@@ -94,7 +94,7 @@ export function createSdkServices(sdk: FrontierSDK): FrontierServices {
 
       recordPayment: async (payment) => {
         const payments = await storage.get<AgentPayment[]>(PAYMENTS_KEY).catch(() => null) ?? [];
-        const newPayment: AgentPayment = { id: `pay-${Date.now()}`, ...payment };
+        const newPayment: AgentPayment = { id: `pay-${crypto.randomUUID()}`, ...payment };
         const agents = await storage.get<Agent[]>(AGENTS_KEY).catch(() => null) ?? [];
         await storage.set(PAYMENTS_KEY, [newPayment, ...payments]);
         await storage.set(
